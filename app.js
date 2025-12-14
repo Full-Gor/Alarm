@@ -591,20 +591,17 @@ class AlarmModule {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
-        const currentSecond = now.getSeconds();
         const currentDay = now.getDay();
-        const todayStr = now.toDateString();
+        const currentTimeKey = `${currentHour}:${currentMinute}`;
 
         for (const alarm of this.alarms) {
             if (!alarm.enabled) continue;
 
-            // Check if time matches (only at second 0 to avoid multiple triggers)
-            if (alarm.hours === currentHour &&
-                alarm.minutes === currentMinute &&
-                currentSecond === 0) {
+            // Check if time matches
+            if (alarm.hours === currentHour && alarm.minutes === currentMinute) {
 
-                // Check if already triggered today
-                if (alarm.lastTriggered === todayStr) continue;
+                // Check if already triggered at this time
+                if (alarm.lastTriggeredTime === currentTimeKey) continue;
 
                 // Check days
                 if (alarm.days && alarm.days.length > 0) {
@@ -613,7 +610,7 @@ class AlarmModule {
 
                 // Trigger the alarm!
                 this.triggerAlarm(alarm);
-                alarm.lastTriggered = todayStr;
+                alarm.lastTriggeredTime = currentTimeKey;
 
                 // If it's a one-time alarm, disable it
                 if (!alarm.days || alarm.days.length === 0) {
