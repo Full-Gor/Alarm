@@ -315,28 +315,26 @@ class AlarmModule {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
-        // Ringing modal buttons - use both click and touchend for better mobile support
-        this.snoozeBtn.addEventListener('click', (e) => {
+        // Ringing modal buttons - use pointerup for unified touch/mouse support
+        const handleSnooze = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log('Snooze button pressed');
             this.snoozeAlarm();
-        });
-        this.snoozeBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.snoozeAlarm();
-        });
+        };
 
-        this.dismissBtn.addEventListener('click', (e) => {
+        const handleDismiss = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log('Dismiss button pressed');
             this.dismissAlarm();
-        });
-        this.dismissBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.dismissAlarm();
-        });
+        };
+
+        // Use multiple event types for maximum compatibility
+        this.snoozeBtn.addEventListener('pointerup', handleSnooze);
+        this.snoozeBtn.addEventListener('click', handleSnooze);
+        this.dismissBtn.addEventListener('pointerup', handleDismiss);
+        this.dismissBtn.addEventListener('click', handleDismiss);
 
         // Close modal on outside click
         this.modal.addEventListener('click', (e) => {
@@ -643,13 +641,20 @@ class AlarmModule {
     }
 
     snoozeAlarm() {
-        if (!this.ringingAlarm) return;
+        console.log('snoozeAlarm called, ringingAlarm:', this.ringingAlarm);
+        if (!this.ringingAlarm) {
+            console.log('No ringing alarm, closing modal anyway');
+            this.audioManager.stopAll();
+            this.ringingModal.classList.remove('active');
+            return;
+        }
 
         const alarmToSnooze = this.ringingAlarm;
         this.ringingAlarm = null;
 
         this.audioManager.stopAll();
         this.ringingModal.classList.remove('active');
+        console.log('Modal closed, creating snooze alarm');
 
         // Create a snooze alarm for 3 minutes from now
         const now = new Date();
@@ -672,9 +677,11 @@ class AlarmModule {
     }
 
     dismissAlarm() {
+        console.log('dismissAlarm called');
         this.ringingAlarm = null;
         this.audioManager.stopAll();
         this.ringingModal.classList.remove('active');
+        console.log('Alarm dismissed, modal closed');
     }
 }
 
@@ -886,17 +893,15 @@ class TimerModule {
         this.cancelBtn.addEventListener('click', () => this.cancel());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
 
-        // Dismiss button - use both click and touchend for better mobile support
-        this.dismissBtn.addEventListener('click', (e) => {
+        // Dismiss button - use pointerup for unified touch/mouse support
+        const handleTimerDismiss = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log('Timer dismiss button pressed');
             this.dismiss();
-        });
-        this.dismissBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.dismiss();
-        });
+        };
+        this.dismissBtn.addEventListener('pointerup', handleTimerDismiss);
+        this.dismissBtn.addEventListener('click', handleTimerDismiss);
 
         // Preset buttons
         this.presetBtns.forEach(btn => {
@@ -1080,6 +1085,7 @@ class TimerModule {
     }
 
     dismiss() {
+        console.log('Timer dismiss called');
         this.audioManager.stopAll();
         this.finishedModal.classList.remove('active');
         this.setupContainer.style.display = 'block';
@@ -1087,6 +1093,7 @@ class TimerModule {
 
         // Reset progress circle
         this.progressCircle.style.strokeDashoffset = 0;
+        console.log('Timer dismissed, modal closed');
     }
 }
 
