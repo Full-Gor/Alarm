@@ -623,6 +623,7 @@ class AlarmModule {
     }
 
     triggerAlarm(alarm) {
+        console.log('=== ALARM TRIGGERED ===', alarm);
         this.ringingAlarm = alarm;
 
         // Play sound
@@ -635,26 +636,41 @@ class AlarmModule {
         });
 
         // Show ringing modal
-        this.ringingTime.textContent = `${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`;
+        const timeStr = `${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`;
+        this.ringingTime.textContent = timeStr;
         this.ringingLabel.textContent = alarm.label || 'Alarme';
+
+        // Force show modal
+        this.ringingModal.style.display = 'flex';
+        this.ringingModal.style.opacity = '1';
+        this.ringingModal.style.visibility = 'visible';
         this.ringingModal.classList.add('active');
+
+        console.log('Modal should be visible now:', this.ringingModal);
+        console.log('Modal classList:', this.ringingModal.classList);
+        console.log('Modal computed display:', window.getComputedStyle(this.ringingModal).display);
     }
 
     snoozeAlarm() {
-        console.log('snoozeAlarm called, ringingAlarm:', this.ringingAlarm);
+        console.log('=== SNOOZE ALARM ===');
+
+        // Stop sound first
+        this.audioManager.stopAll();
+
+        // Hide modal immediately
+        this.ringingModal.style.display = 'none';
+        this.ringingModal.style.opacity = '0';
+        this.ringingModal.style.visibility = 'hidden';
+        this.ringingModal.classList.remove('active');
+
         if (!this.ringingAlarm) {
-            console.log('No ringing alarm, closing modal anyway');
-            this.audioManager.stopAll();
-            this.ringingModal.classList.remove('active');
+            console.log('No ringing alarm to snooze');
             return;
         }
 
         const alarmToSnooze = this.ringingAlarm;
         this.ringingAlarm = null;
-
-        this.audioManager.stopAll();
-        this.ringingModal.classList.remove('active');
-        console.log('Modal closed, creating snooze alarm');
+        console.log('Creating snooze alarm for:', alarmToSnooze.label);
 
         // Create a snooze alarm for 3 minutes from now
         const now = new Date();
@@ -677,10 +693,18 @@ class AlarmModule {
     }
 
     dismissAlarm() {
-        console.log('dismissAlarm called');
-        this.ringingAlarm = null;
+        console.log('=== DISMISS ALARM ===');
+
+        // Stop sound first
         this.audioManager.stopAll();
+
+        // Hide modal immediately
+        this.ringingModal.style.display = 'none';
+        this.ringingModal.style.opacity = '0';
+        this.ringingModal.style.visibility = 'hidden';
         this.ringingModal.classList.remove('active');
+
+        this.ringingAlarm = null;
         console.log('Alarm dismissed, modal closed');
     }
 }
@@ -1049,6 +1073,7 @@ class TimerModule {
     }
 
     finish() {
+        console.log('=== TIMER FINISHED ===');
         clearInterval(this.interval);
         this.running = false;
 
@@ -1066,9 +1091,14 @@ class TimerModule {
             tag: 'timer-finished'
         });
 
-        // Show finished modal
+        // Show finished modal - force display
         this.finishedDuration.textContent = this.initialDuration;
+        this.finishedModal.style.display = 'flex';
+        this.finishedModal.style.opacity = '1';
+        this.finishedModal.style.visibility = 'visible';
         this.finishedModal.classList.add('active');
+
+        console.log('Timer modal should be visible:', this.finishedModal);
     }
 
     formatDuration(totalSeconds) {
@@ -1085,14 +1115,22 @@ class TimerModule {
     }
 
     dismiss() {
-        console.log('Timer dismiss called');
+        console.log('=== TIMER DISMISS ===');
+
+        // Stop sound first
         this.audioManager.stopAll();
+
+        // Hide modal immediately
+        this.finishedModal.style.display = 'none';
+        this.finishedModal.style.opacity = '0';
+        this.finishedModal.style.visibility = 'hidden';
         this.finishedModal.classList.remove('active');
+
+        // Reset UI
         this.setupContainer.style.display = 'block';
         this.runningContainer.style.display = 'none';
-
-        // Reset progress circle
         this.progressCircle.style.strokeDashoffset = 0;
+
         console.log('Timer dismissed, modal closed');
     }
 }
