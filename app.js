@@ -315,9 +315,28 @@ class AlarmModule {
             input.addEventListener('focus', (e) => e.target.select());
         });
 
-        // Ringing modal buttons
-        this.snoozeBtn.addEventListener('click', () => this.snoozeAlarm());
-        this.dismissBtn.addEventListener('click', () => this.dismissAlarm());
+        // Ringing modal buttons - use both click and touchend for better mobile support
+        this.snoozeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.snoozeAlarm();
+        });
+        this.snoozeBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.snoozeAlarm();
+        });
+
+        this.dismissBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.dismissAlarm();
+        });
+        this.dismissBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.dismissAlarm();
+        });
 
         // Close modal on outside click
         this.modal.addEventListener('click', (e) => {
@@ -629,36 +648,36 @@ class AlarmModule {
     snoozeAlarm() {
         if (!this.ringingAlarm) return;
 
+        const alarmToSnooze = this.ringingAlarm;
+        this.ringingAlarm = null;
+
         this.audioManager.stopAll();
         this.ringingModal.classList.remove('active');
 
-        // Create a snooze alarm for 5 minutes from now
+        // Create a snooze alarm for 3 minutes from now
         const now = new Date();
-        now.setMinutes(now.getMinutes() + 5);
+        now.setMinutes(now.getMinutes() + 3);
 
         const snoozeAlarm = {
-            ...this.ringingAlarm,
+            ...alarmToSnooze,
             id: 'snooze-' + Date.now(),
             hours: now.getHours(),
             minutes: now.getMinutes(),
-            label: (this.ringingAlarm.label || 'Alarme') + ' (Répétition)',
+            label: (alarmToSnooze.label || 'Alarme') + ' (Répétition)',
             days: [], // One-time
+            enabled: true,
             lastTriggered: null
         };
 
         this.alarms.push(snoozeAlarm);
         this.saveAlarms();
         this.renderAlarms();
-
-        this.ringingAlarm = null;
     }
 
     dismissAlarm() {
-        if (!this.ringingAlarm) return;
-
+        this.ringingAlarm = null;
         this.audioManager.stopAll();
         this.ringingModal.classList.remove('active');
-        this.ringingAlarm = null;
     }
 }
 
@@ -869,7 +888,18 @@ class TimerModule {
         this.startBtn.addEventListener('click', () => this.start());
         this.cancelBtn.addEventListener('click', () => this.cancel());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
-        this.dismissBtn.addEventListener('click', () => this.dismiss());
+
+        // Dismiss button - use both click and touchend for better mobile support
+        this.dismissBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.dismiss();
+        });
+        this.dismissBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.dismiss();
+        });
 
         // Preset buttons
         this.presetBtns.forEach(btn => {
