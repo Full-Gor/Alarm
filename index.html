@@ -84,22 +84,44 @@
                 <div id="clock-holographic" class="clock-type">
                     <div class="holo-clock-container">
                         <div class="holo-time-display" id="holo-time">00:00:00</div>
-                        <div class="holo-clock">
-                            <svg class="holo-svg" viewBox="0 0 300 300">
+                        <div class="holo-clock-wrapper" id="holo-clock-wrapper">
+                            <svg class="holo-svg" viewBox="0 0 320 320" id="holo-svg">
+                                <!-- Sync ring (outer decorative) -->
+                                <circle class="holo-sync-ring" cx="160" cy="160" r="150"/>
+
                                 <!-- Hour ring -->
-                                <circle class="holo-ring holo-ring-hour-bg" cx="150" cy="150" r="130"/>
-                                <circle class="holo-ring holo-ring-hour" cx="150" cy="150" r="130" id="holo-hour-ring"/>
+                                <g class="holo-ticks holo-ticks-hour" id="holo-ticks-hour"></g>
+                                <circle class="holo-ring-bg holo-ring-hour-bg" cx="160" cy="160" r="120"/>
+                                <circle class="holo-ring holo-ring-hour" cx="160" cy="160" r="120" id="holo-hour-ring"/>
+                                <circle class="holo-ball holo-ball-hour" cx="160" cy="40" r="5" id="holo-ball-hour"/>
+
                                 <!-- Minute ring -->
-                                <circle class="holo-ring holo-ring-min-bg" cx="150" cy="150" r="105"/>
-                                <circle class="holo-ring holo-ring-min" cx="150" cy="150" r="105" id="holo-min-ring"/>
+                                <g class="holo-ticks holo-ticks-min" id="holo-ticks-min"></g>
+                                <circle class="holo-ring-bg holo-ring-min-bg" cx="160" cy="160" r="90"/>
+                                <circle class="holo-ring holo-ring-min" cx="160" cy="160" r="90" id="holo-min-ring"/>
+                                <circle class="holo-ball holo-ball-min" cx="160" cy="70" r="4" id="holo-ball-min"/>
+
                                 <!-- Second ring -->
-                                <circle class="holo-ring holo-ring-sec-bg" cx="150" cy="150" r="80"/>
-                                <circle class="holo-ring holo-ring-sec" cx="150" cy="150" r="80" id="holo-sec-ring"/>
+                                <g class="holo-ticks holo-ticks-sec" id="holo-ticks-sec"></g>
+                                <circle class="holo-ring-bg holo-ring-sec-bg" cx="160" cy="160" r="62"/>
+                                <circle class="holo-ring holo-ring-sec" cx="160" cy="160" r="62" id="holo-sec-ring"/>
+                                <circle class="holo-ball holo-ball-sec" cx="160" cy="98" r="3" id="holo-ball-sec"/>
+
                                 <!-- MS ring -->
-                                <circle class="holo-ring holo-ring-ms-bg" cx="150" cy="150" r="55"/>
-                                <circle class="holo-ring holo-ring-ms" cx="150" cy="150" r="55" id="holo-ms-ring"/>
-                                <!-- Center -->
-                                <circle class="holo-center" cx="150" cy="150" r="20"/>
+                                <circle class="holo-ring-bg holo-ring-ms-bg" cx="160" cy="160" r="38"/>
+                                <circle class="holo-ring holo-ring-ms" cx="160" cy="160" r="38" id="holo-ms-ring"/>
+                                <circle class="holo-ball holo-ball-ms" cx="160" cy="122" r="2.5" id="holo-ball-ms"/>
+
+                                <!-- Needles -->
+                                <line class="holo-needle holo-needle-hour" x1="160" y1="160" x2="160" y2="70" id="holo-needle-hour"/>
+                                <line class="holo-needle holo-needle-min" x1="160" y1="160" x2="160" y2="85" id="holo-needle-min"/>
+                                <line class="holo-needle holo-needle-sec" x1="160" y1="160" x2="160" y2="105" id="holo-needle-sec"/>
+                                <line class="holo-needle holo-needle-ms" x1="160" y1="160" x2="160" y2="125" id="holo-needle-ms"/>
+
+                                <!-- Center core -->
+                                <circle class="holo-core-outer" cx="160" cy="160" r="15"/>
+                                <circle class="holo-core-inner" cx="160" cy="160" r="10"/>
+                                <circle class="holo-core-center" cx="160" cy="160" r="5"/>
                             </svg>
                         </div>
                         <div class="holo-date" id="holo-date"></div>
@@ -108,6 +130,11 @@
                             <span class="holo-legend-item"><span class="holo-dot sec"></span>SEC</span>
                             <span class="holo-legend-item"><span class="holo-dot min"></span>MIN</span>
                             <span class="holo-legend-item"><span class="holo-dot hour"></span>HOUR</span>
+                        </div>
+                        <div class="holo-view-modes">
+                            <button class="holo-mode-btn active" data-mode="face">FACE</button>
+                            <button class="holo-mode-btn" data-mode="profile">PROFIL</button>
+                            <button class="holo-mode-btn" data-mode="flat">PLAT</button>
                         </div>
                     </div>
                 </div>

@@ -197,8 +197,10 @@ class NotificationManager {
 class ClockModule {
     constructor() {
         this.currentType = StorageManager.load('clockType', 'digital');
+        this.holoViewMode = 'face';
         this.interval = null;
         this.msInterval = null;
+        this.holoTicksGenerated = false;
 
         this.initElements();
         this.initEventListeners();
@@ -217,10 +219,23 @@ class ClockModule {
         // Holographic
         this.holoTime = document.getElementById('holo-time');
         this.holoDate = document.getElementById('holo-date');
+        this.holoClockWrapper = document.getElementById('holo-clock-wrapper');
         this.holoHourRing = document.getElementById('holo-hour-ring');
         this.holoMinRing = document.getElementById('holo-min-ring');
         this.holoSecRing = document.getElementById('holo-sec-ring');
         this.holoMsRing = document.getElementById('holo-ms-ring');
+        this.holoNeedleHour = document.getElementById('holo-needle-hour');
+        this.holoNeedleMin = document.getElementById('holo-needle-min');
+        this.holoNeedleSec = document.getElementById('holo-needle-sec');
+        this.holoNeedleMs = document.getElementById('holo-needle-ms');
+        this.holoBallHour = document.getElementById('holo-ball-hour');
+        this.holoBallMin = document.getElementById('holo-ball-min');
+        this.holoBallSec = document.getElementById('holo-ball-sec');
+        this.holoBallMs = document.getElementById('holo-ball-ms');
+        this.holoTicksHour = document.getElementById('holo-ticks-hour');
+        this.holoTicksMin = document.getElementById('holo-ticks-min');
+        this.holoTicksSec = document.getElementById('holo-ticks-sec');
+        this.holoModeBtns = document.querySelectorAll('.holo-mode-btn');
 
         // Fluid
         this.fluidDate = document.getElementById('fluid-date');
@@ -258,6 +273,23 @@ class ClockModule {
                 this.closeSelector();
             });
         });
+
+        // Holographic view mode buttons
+        this.holoModeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.setHoloViewMode(btn.dataset.mode);
+            });
+        });
+    }
+
+    setHoloViewMode(mode) {
+        this.holoViewMode = mode;
+        this.holoModeBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        if (this.holoClockWrapper) {
+            this.holoClockWrapper.className = `holo-clock-wrapper mode-${mode}`;
+        }
     }
 
     openSelector() {
@@ -288,9 +320,67 @@ class ClockModule {
             this.msInterval = null;
         }
 
-        // Start ms interval for holographic
-        if (type === 'holographic' && !this.msInterval) {
-            this.msInterval = setInterval(() => this.updateHolographicMs(), 50);
+        // Start ms interval for holographic and generate ticks
+        if (type === 'holographic') {
+            if (!this.holoTicksGenerated) {
+                this.generateHoloTicks();
+                this.holoTicksGenerated = true;
+            }
+            if (!this.msInterval) {
+                this.msInterval = setInterval(() => this.updateHolographicMs(), 50);
+            }
+        }
+    }
+
+    generateHoloTicks() {
+        const cx = 160, cy = 160;
+
+        // Hour ticks (12)
+        if (this.holoTicksHour) {
+            let hourTicks = '';
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * 360 - 90;
+                const rad = angle * Math.PI / 180;
+                const r1 = 130, r2 = 140;
+                const x1 = cx + Math.cos(rad) * r1;
+                const y1 = cy + Math.sin(rad) * r1;
+                const x2 = cx + Math.cos(rad) * r2;
+                const y2 = cy + Math.sin(rad) * r2;
+                hourTicks += `<line class="holo-tick holo-tick-hour" data-index="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+            }
+            this.holoTicksHour.innerHTML = hourTicks;
+        }
+
+        // Minute ticks (60)
+        if (this.holoTicksMin) {
+            let minTicks = '';
+            for (let i = 0; i < 60; i++) {
+                const angle = (i / 60) * 360 - 90;
+                const rad = angle * Math.PI / 180;
+                const r1 = 98, r2 = 106;
+                const x1 = cx + Math.cos(rad) * r1;
+                const y1 = cy + Math.sin(rad) * r1;
+                const x2 = cx + Math.cos(rad) * r2;
+                const y2 = cy + Math.sin(rad) * r2;
+                minTicks += `<line class="holo-tick holo-tick-min" data-index="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+            }
+            this.holoTicksMin.innerHTML = minTicks;
+        }
+
+        // Second ticks (60)
+        if (this.holoTicksSec) {
+            let secTicks = '';
+            for (let i = 0; i < 60; i++) {
+                const angle = (i / 60) * 360 - 90;
+                const rad = angle * Math.PI / 180;
+                const r1 = 68, r2 = 76;
+                const x1 = cx + Math.cos(rad) * r1;
+                const y1 = cy + Math.sin(rad) * r1;
+                const x2 = cx + Math.cos(rad) * r2;
+                const y2 = cy + Math.sin(rad) * r2;
+                secTicks += `<line class="holo-tick holo-tick-sec" data-index="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+            }
+            this.holoTicksSec.innerHTML = secTicks;
         }
     }
 
@@ -325,8 +415,10 @@ class ClockModule {
 
         // Holographic
         if (this.holoTime) this.holoTime.textContent = timeStr;
-        if (this.holoDate) this.holoDate.textContent = dateStr;
+        if (this.holoDate) this.holoDate.textContent = dateStr.toUpperCase();
         this.updateHolographicRings(h, m, s);
+        this.updateHolographicNeedles(h, m, s);
+        this.updateHolographicTicks(h, m, s);
 
         // Fluid
         this.updateFluid(h, m, s);
@@ -345,9 +437,9 @@ class ClockModule {
     }
 
     updateHolographicRings(h, m, s) {
-        const hourCircum = 2 * Math.PI * 130;
-        const minCircum = 2 * Math.PI * 105;
-        const secCircum = 2 * Math.PI * 80;
+        const hourCircum = 2 * Math.PI * 120;
+        const minCircum = 2 * Math.PI * 90;
+        const secCircum = 2 * Math.PI * 62;
 
         const hourProgress = ((h % 12) + m / 60) / 12;
         const minProgress = (m + s / 60) / 60;
@@ -362,15 +454,78 @@ class ClockModule {
         if (this.holoSecRing) {
             this.holoSecRing.style.strokeDashoffset = secCircum * (1 - secProgress);
         }
+
+        // Update balls positions
+        this.updateHoloBall(this.holoBallHour, hourProgress, 120);
+        this.updateHoloBall(this.holoBallMin, minProgress, 90);
+        this.updateHoloBall(this.holoBallSec, secProgress, 62);
+    }
+
+    updateHoloBall(ball, progress, radius) {
+        if (!ball) return;
+        const angle = progress * 360 - 90;
+        const rad = angle * Math.PI / 180;
+        const cx = 160, cy = 160;
+        const x = cx + Math.cos(rad) * radius;
+        const y = cy + Math.sin(rad) * radius;
+        ball.setAttribute('cx', x);
+        ball.setAttribute('cy', y);
+    }
+
+    updateHolographicNeedles(h, m, s) {
+        const hourAngle = ((h % 12) + m / 60) / 12 * 360;
+        const minAngle = (m + s / 60) / 60 * 360;
+        const secAngle = s / 60 * 360;
+
+        if (this.holoNeedleHour) this.holoNeedleHour.style.transform = `rotate(${hourAngle}deg)`;
+        if (this.holoNeedleMin) this.holoNeedleMin.style.transform = `rotate(${minAngle}deg)`;
+        if (this.holoNeedleSec) this.holoNeedleSec.style.transform = `rotate(${secAngle}deg)`;
+    }
+
+    updateHolographicTicks(h, m, s) {
+        const hourIndex = Math.floor(((h % 12) + m / 60) / 12 * 12);
+        const minIndex = Math.floor((m + s / 60) / 60 * 60);
+        const secIndex = s;
+
+        // Update hour ticks
+        if (this.holoTicksHour) {
+            this.holoTicksHour.querySelectorAll('.holo-tick-hour').forEach((tick, i) => {
+                tick.classList.toggle('active', i <= hourIndex);
+            });
+        }
+
+        // Update minute ticks
+        if (this.holoTicksMin) {
+            this.holoTicksMin.querySelectorAll('.holo-tick-min').forEach((tick, i) => {
+                tick.classList.toggle('active', i <= minIndex);
+            });
+        }
+
+        // Update second ticks
+        if (this.holoTicksSec) {
+            this.holoTicksSec.querySelectorAll('.holo-tick-sec').forEach((tick, i) => {
+                tick.classList.toggle('active', i <= secIndex);
+            });
+        }
     }
 
     updateHolographicMs() {
-        const ms = Date.now() % 1000;
-        const msCircum = 2 * Math.PI * 55;
+        const now = Date.now();
+        const ms = now % 1000;
+        const msCircum = 2 * Math.PI * 38;
         const msProgress = ms / 1000;
 
         if (this.holoMsRing) {
             this.holoMsRing.style.strokeDashoffset = msCircum * (1 - msProgress);
+        }
+
+        // Update ms ball
+        this.updateHoloBall(this.holoBallMs, msProgress, 38);
+
+        // Update ms needle
+        const msAngle = msProgress * 360;
+        if (this.holoNeedleMs) {
+            this.holoNeedleMs.style.transform = `rotate(${msAngle}deg)`;
         }
     }
 

@@ -125,11 +125,13 @@ body {
 .nav-btn svg {
     width: 22px;
     height: 22px;
+    pointer-events: none;
 }
 
 .nav-btn span {
     font-size: 10px;
     font-weight: 600;
+    pointer-events: none;
 }
 
 /* ==========================================
@@ -279,89 +281,218 @@ body {
     box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
 }
 
-/* Holographic Clock */
+/* Holographic Clock - clockApp style */
 .holo-clock-container {
     text-align: center;
-    padding: 20px 0;
+    padding: 15px 0;
 }
 
 .holo-time-display {
-    font-size: clamp(40px, 12vw, 56px);
-    font-weight: 200;
+    font-size: clamp(28px, 9vw, 36px);
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
-    color: var(--cyan-color);
-    text-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
-    margin-bottom: 20px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(100, 200, 255, 0.8);
+    letter-spacing: 4px;
+    margin-bottom: 15px;
 }
 
-.holo-clock {
+.holo-clock-wrapper {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    perspective: 1000px;
+    transition: transform 0.3s ease;
+}
+
+.holo-clock-wrapper.mode-face {
+    transform: rotateX(0deg) rotateY(0deg) scale(1);
+}
+
+.holo-clock-wrapper.mode-profile {
+    transform: rotateX(10deg) rotateY(50deg) scale(0.85);
+}
+
+.holo-clock-wrapper.mode-flat {
+    transform: rotateX(60deg) rotateY(0deg) scale(0.75);
 }
 
 .holo-svg {
-    width: min(280px, 75vw);
-    height: min(280px, 75vw);
+    width: min(300px, 80vw);
+    height: min(300px, 80vw);
 }
 
+/* Sync ring (outer decorative) */
+.holo-sync-ring {
+    fill: none;
+    stroke: rgba(150, 150, 200, 0.3);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+}
+
+/* Ring backgrounds */
+.holo-ring-bg {
+    fill: none;
+    stroke-width: 6;
+    stroke-opacity: 0.2;
+}
+
+.holo-ring-hour-bg { stroke: rgba(255, 100, 150, 1); }
+.holo-ring-min-bg { stroke: rgba(100, 200, 255, 1); }
+.holo-ring-sec-bg { stroke: rgba(100, 255, 150, 1); }
+.holo-ring-ms-bg { stroke: rgba(180, 100, 255, 1); }
+
+/* Active rings */
 .holo-ring {
     fill: none;
-    stroke-width: 8;
+    stroke-width: 6;
     stroke-linecap: round;
     transform-origin: center;
     transform: rotate(-90deg);
 }
 
-.holo-ring-hour-bg { stroke: rgba(139, 92, 246, 0.2); }
-.holo-ring-hour { stroke: var(--primary-color); stroke-dasharray: 816.8; stroke-dashoffset: 816.8; transition: stroke-dashoffset 0.5s ease; filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5)); }
+.holo-ring-hour {
+    stroke: rgba(255, 100, 150, 1);
+    stroke-dasharray: 754;
+    stroke-dashoffset: 754;
+    filter: drop-shadow(0 0 8px rgba(255, 100, 150, 0.6));
+}
 
-.holo-ring-min-bg { stroke: rgba(16, 185, 129, 0.2); }
-.holo-ring-min { stroke: var(--secondary-color); stroke-dasharray: 659.7; stroke-dashoffset: 659.7; transition: stroke-dashoffset 0.5s ease; filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5)); }
+.holo-ring-min {
+    stroke: rgba(100, 200, 255, 1);
+    stroke-dasharray: 565;
+    stroke-dashoffset: 565;
+    filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.6));
+}
 
-.holo-ring-sec-bg { stroke: rgba(6, 182, 212, 0.2); }
-.holo-ring-sec { stroke: var(--cyan-color); stroke-dasharray: 502.7; stroke-dashoffset: 502.7; transition: stroke-dashoffset 0.5s ease; filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.5)); }
+.holo-ring-sec {
+    stroke: rgba(100, 255, 150, 1);
+    stroke-dasharray: 390;
+    stroke-dashoffset: 390;
+    filter: drop-shadow(0 0 8px rgba(100, 255, 150, 0.6));
+}
 
-.holo-ring-ms-bg { stroke: rgba(245, 158, 11, 0.2); }
-.holo-ring-ms { stroke: var(--warning-color); stroke-dasharray: 345.6; stroke-dashoffset: 345.6; transition: stroke-dashoffset 0.05s linear; filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.5)); }
+.holo-ring-ms {
+    stroke: rgba(180, 100, 255, 1);
+    stroke-dasharray: 239;
+    stroke-dashoffset: 239;
+    filter: drop-shadow(0 0 8px rgba(180, 100, 255, 0.6));
+}
 
-.holo-center {
-    fill: rgba(6, 182, 212, 0.3);
-    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.5));
+/* Tick marks */
+.holo-tick {
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.holo-tick-hour { stroke: rgba(255, 100, 150, 0.3); }
+.holo-tick-hour.active { stroke: rgba(255, 100, 150, 0.9); }
+.holo-tick-min { stroke: rgba(100, 200, 255, 0.2); }
+.holo-tick-min.active { stroke: rgba(100, 200, 255, 0.8); }
+.holo-tick-sec { stroke: rgba(100, 255, 150, 0.2); }
+.holo-tick-sec.active { stroke: rgba(100, 255, 150, 0.8); }
+
+/* Progress balls */
+.holo-ball {
+    fill: #fff;
+    filter: drop-shadow(0 0 4px #fff);
+}
+
+/* Needles */
+.holo-needle {
+    stroke-linecap: round;
+    transform-origin: 160px 160px;
+}
+
+.holo-needle-hour { stroke: rgba(255, 100, 150, 1); stroke-width: 6; filter: drop-shadow(0 0 4px rgba(255, 100, 150, 0.5)); }
+.holo-needle-min { stroke: rgba(100, 200, 255, 1); stroke-width: 5; filter: drop-shadow(0 0 4px rgba(100, 200, 255, 0.5)); }
+.holo-needle-sec { stroke: rgba(100, 255, 150, 1); stroke-width: 4; filter: drop-shadow(0 0 4px rgba(100, 255, 150, 0.5)); }
+.holo-needle-ms { stroke: rgba(180, 100, 255, 1); stroke-width: 3; filter: drop-shadow(0 0 4px rgba(180, 100, 255, 0.5)); }
+
+/* Core center */
+.holo-core-outer {
+    fill: none;
+    stroke: rgba(200, 230, 255, 1);
+    stroke-width: 4;
+}
+
+.holo-core-inner {
+    fill: rgba(100, 200, 255, 1);
+}
+
+.holo-core-center {
+    fill: #fff;
 }
 
 .holo-date {
-    font-size: 14px;
-    color: var(--text-muted);
-    text-transform: capitalize;
+    font-size: 12px;
+    color: rgba(150, 200, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
     margin-bottom: 15px;
 }
 
 .holo-legend {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
+    background: rgba(0, 10, 20, 0.7);
+    padding: 10px 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(100, 200, 255, 0.2);
+    margin: 0 auto 15px;
+    width: fit-content;
 }
 
 .holo-legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--text-muted);
+    gap: 5px;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 600;
+    letter-spacing: 1px;
 }
 
 .holo-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
 }
 
-.holo-dot.hour { background: var(--primary-color); }
-.holo-dot.min { background: var(--secondary-color); }
-.holo-dot.sec { background: var(--cyan-color); }
-.holo-dot.ms { background: var(--warning-color); }
+.holo-dot.hour { background: rgba(255, 100, 150, 1); }
+.holo-dot.min { background: rgba(100, 200, 255, 1); }
+.holo-dot.sec { background: rgba(100, 255, 150, 1); }
+.holo-dot.ms { background: rgba(180, 100, 255, 1); }
+
+/* View mode buttons */
+.holo-view-modes {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.holo-mode-btn {
+    padding: 8px 16px;
+    background: rgba(24, 67, 68, 0.8);
+    border: 2px solid #33ABB9;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.holo-mode-btn:hover {
+    background: rgba(51, 171, 185, 0.3);
+}
+
+.holo-mode-btn.active {
+    background: rgba(51, 171, 185, 0.5);
+}
 
 /* Fluid Clock */
 .fluid-clock-container {
