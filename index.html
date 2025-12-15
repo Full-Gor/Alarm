@@ -41,22 +41,203 @@
                 </svg>
                 <span>Timer</span>
             </button>
+            <button class="nav-btn" data-tab="rounds">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12l2 2 4-4"/>
+                </svg>
+                <span>Rounds</span>
+            </button>
         </nav>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Clock Tab -->
             <section id="clock-tab" class="tab-content active">
-                <div class="clock-display">
-                    <div class="digital-time" id="digital-clock">00:00:00</div>
-                    <div class="date-display" id="date-display"></div>
+                <div class="clock-header">
+                    <h2>Horloge</h2>
+                    <button class="clock-selector-btn" id="clock-selector-btn" title="Changer le style">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                    </button>
                 </div>
-                <div class="analog-clock">
-                    <div class="clock-face">
-                        <div class="hand hour-hand" id="hour-hand"></div>
-                        <div class="hand minute-hand" id="minute-hand"></div>
-                        <div class="hand second-hand" id="second-hand"></div>
-                        <div class="center-dot"></div>
+
+                <!-- Digital Clock (default) -->
+                <div id="clock-digital" class="clock-type active">
+                    <div class="clock-display">
+                        <div class="digital-time" id="digital-clock">00:00:00</div>
+                        <div class="date-display" id="date-display"></div>
+                    </div>
+                    <div class="analog-clock">
+                        <div class="clock-face">
+                            <div class="hand hour-hand" id="hour-hand"></div>
+                            <div class="hand minute-hand" id="minute-hand"></div>
+                            <div class="hand second-hand" id="second-hand"></div>
+                            <div class="center-dot"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holographic Clock -->
+                <div id="clock-holographic" class="clock-type">
+                    <div class="holo-clock-container">
+                        <div class="holo-time-display" id="holo-time">00:00:00</div>
+                        <div class="holo-clock">
+                            <svg class="holo-svg" viewBox="0 0 300 300">
+                                <!-- Hour ring -->
+                                <circle class="holo-ring holo-ring-hour-bg" cx="150" cy="150" r="130"/>
+                                <circle class="holo-ring holo-ring-hour" cx="150" cy="150" r="130" id="holo-hour-ring"/>
+                                <!-- Minute ring -->
+                                <circle class="holo-ring holo-ring-min-bg" cx="150" cy="150" r="105"/>
+                                <circle class="holo-ring holo-ring-min" cx="150" cy="150" r="105" id="holo-min-ring"/>
+                                <!-- Second ring -->
+                                <circle class="holo-ring holo-ring-sec-bg" cx="150" cy="150" r="80"/>
+                                <circle class="holo-ring holo-ring-sec" cx="150" cy="150" r="80" id="holo-sec-ring"/>
+                                <!-- MS ring -->
+                                <circle class="holo-ring holo-ring-ms-bg" cx="150" cy="150" r="55"/>
+                                <circle class="holo-ring holo-ring-ms" cx="150" cy="150" r="55" id="holo-ms-ring"/>
+                                <!-- Center -->
+                                <circle class="holo-center" cx="150" cy="150" r="20"/>
+                            </svg>
+                        </div>
+                        <div class="holo-date" id="holo-date"></div>
+                        <div class="holo-legend">
+                            <span class="holo-legend-item"><span class="holo-dot ms"></span>MS</span>
+                            <span class="holo-legend-item"><span class="holo-dot sec"></span>SEC</span>
+                            <span class="holo-legend-item"><span class="holo-dot min"></span>MIN</span>
+                            <span class="holo-legend-item"><span class="holo-dot hour"></span>HOUR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fluid Clock -->
+                <div id="clock-fluid" class="clock-type">
+                    <div class="fluid-clock-container">
+                        <div class="fluid-clock-wrapper">
+                            <div class="fluid-clock-row">
+                                <div class="fluid-digit" id="fluid-h0">0</div>
+                                <div class="fluid-digit" id="fluid-h1">0</div>
+                                <div class="fluid-colon">:</div>
+                                <div class="fluid-digit" id="fluid-m0">0</div>
+                                <div class="fluid-digit" id="fluid-m1">0</div>
+                                <div class="fluid-colon">:</div>
+                                <div class="fluid-digit" id="fluid-s0">0</div>
+                                <div class="fluid-digit" id="fluid-s1">0</div>
+                            </div>
+                        </div>
+                        <div class="fluid-date" id="fluid-date"></div>
+                    </div>
+                </div>
+
+                <!-- Flap Clock Dark -->
+                <div id="clock-flap-dark" class="clock-type">
+                    <div class="flap-clock-container dark">
+                        <div class="flap-clock-wrapper">
+                            <div class="flap-clock-row">
+                                <div class="flap-digit" data-digit="flap-dark-h0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit" data-digit="flap-dark-h1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-colon">:</div>
+                                <div class="flap-digit" data-digit="flap-dark-m0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit" data-digit="flap-dark-m1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-colon">:</div>
+                                <div class="flap-digit" data-digit="flap-dark-s0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit" data-digit="flap-dark-s1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flap-date" id="flap-dark-date"></div>
+                    </div>
+                </div>
+
+                <!-- Flap Clock Light -->
+                <div id="clock-flap-light" class="clock-type">
+                    <div class="flap-clock-container light">
+                        <div class="flap-clock-wrapper light">
+                            <div class="flap-clock-row">
+                                <div class="flap-digit light" data-digit="flap-light-h0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit light" data-digit="flap-light-h1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-colon light">:</div>
+                                <div class="flap-digit light" data-digit="flap-light-m0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit light" data-digit="flap-light-m1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-colon light">:</div>
+                                <div class="flap-digit light" data-digit="flap-light-s0">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                                <div class="flap-digit light" data-digit="flap-light-s1">
+                                    <div class="flap-top"><span>0</span></div>
+                                    <div class="flap-bottom"><span>0</span></div>
+                                    <div class="flap-line"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flap-date light" id="flap-light-date"></div>
+                    </div>
+                </div>
+
+                <!-- Golden Clock -->
+                <div id="clock-golden" class="clock-type">
+                    <div class="golden-clock-container">
+                        <div class="golden-clock">
+                            <svg class="golden-svg" viewBox="0 0 300 300">
+                                <!-- Outer ring -->
+                                <circle class="golden-ring-outer" cx="150" cy="150" r="140"/>
+                                <!-- Inner ring -->
+                                <circle class="golden-ring-inner" cx="150" cy="150" r="120"/>
+                                <!-- Hour markers -->
+                                <g class="golden-markers" id="golden-markers"></g>
+                                <!-- Hands -->
+                                <line class="golden-hand golden-hour" id="golden-hour" x1="150" y1="150" x2="150" y2="80"/>
+                                <line class="golden-hand golden-minute" id="golden-minute" x1="150" y1="150" x2="150" y2="50"/>
+                                <line class="golden-hand golden-second" id="golden-second" x1="150" y1="150" x2="150" y2="40"/>
+                                <!-- Center -->
+                                <circle class="golden-center" cx="150" cy="150" r="8"/>
+                            </svg>
+                        </div>
+                        <div class="golden-time" id="golden-time">00:00:00</div>
+                        <div class="golden-date" id="golden-date"></div>
                     </div>
                 </div>
             </section>
@@ -79,48 +260,112 @@
 
             <!-- Stopwatch Tab -->
             <section id="stopwatch-tab" class="tab-content">
+                <div class="stopwatch-header">
+                    <h2>Chronomètre</h2>
+                    <div class="recording-indicator" id="recording-indicator"></div>
+                </div>
                 <div class="stopwatch-display">
-                    <div class="stopwatch-time" id="stopwatch-display">00:00:00<span class="ms">.000</span></div>
+                    <div class="stopwatch-time" id="stopwatch-display">
+                        <span class="stopwatch-main">00:00</span><span class="stopwatch-ms">.00</span>
+                    </div>
+                    <div class="stopwatch-status" id="stopwatch-status">Prêt</div>
                 </div>
                 <div class="stopwatch-controls">
-                    <button class="control-btn secondary" id="stopwatch-reset" disabled>Réinitialiser</button>
-                    <button class="control-btn primary" id="stopwatch-start">Démarrer</button>
-                    <button class="control-btn secondary" id="stopwatch-lap" disabled>Tour</button>
+                    <button class="round-btn reset-btn" id="stopwatch-reset" disabled title="Reset">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                        <span>Reset</span>
+                    </button>
+                    <button class="main-control-btn play-btn" id="stopwatch-start">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="play-icon">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="pause-icon" style="display:none">
+                            <rect x="6" y="4" width="4" height="16"/>
+                            <rect x="14" y="4" width="4" height="16"/>
+                        </svg>
+                    </button>
+                    <button class="round-btn lap-btn" id="stopwatch-lap" disabled title="Tour">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                            <line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                        <span>Tour</span>
+                    </button>
                 </div>
-                <div class="laps-container">
+                <div class="laps-container" id="laps-container" style="display:none">
+                    <div class="laps-title">Tours enregistrés</div>
+                    <div class="laps-header">
+                        <span>Tour</span>
+                        <span>Temps du tour</span>
+                        <span>Temps total</span>
+                    </div>
                     <div class="laps-list" id="laps-list"></div>
                 </div>
             </section>
 
             <!-- Timer Tab -->
             <section id="timer-tab" class="tab-content">
+                <div class="timer-header">
+                    <h2>Minuteur</h2>
+                    <div class="timer-header-actions">
+                        <button class="icon-btn" id="timer-mute-btn" title="Mute">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="volume-on">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="volume-off" style="display:none">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                <line x1="23" y1="9" x2="17" y2="15"/>
+                                <line x1="17" y1="9" x2="23" y2="15"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="timer-sound-btn" title="Son">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 <div class="timer-setup" id="timer-setup">
-                    <div class="timer-input-container">
-                        <div class="timer-input-group">
-                            <input type="number" id="timer-hours" min="0" max="99" value="0"
-                                   inputmode="numeric" pattern="[0-9]*">
-                            <label>heures</label>
-                        </div>
-                        <span class="timer-separator">:</span>
-                        <div class="timer-input-group">
-                            <input type="number" id="timer-minutes" min="0" max="59" value="5"
-                                   inputmode="numeric" pattern="[0-9]*">
-                            <label>min</label>
-                        </div>
-                        <span class="timer-separator">:</span>
-                        <div class="timer-input-group">
-                            <input type="number" id="timer-seconds" min="0" max="59" value="0"
-                                   inputmode="numeric" pattern="[0-9]*">
-                            <label>sec</label>
+                    <div class="timer-circle-container">
+                        <div class="timer-circle-display">
+                            <div class="timer-input-container">
+                                <div class="timer-input-group">
+                                    <input type="number" id="timer-hours" min="0" max="99" value="0"
+                                           inputmode="numeric" pattern="[0-9]*">
+                                    <label>heures</label>
+                                </div>
+                                <span class="timer-separator">:</span>
+                                <div class="timer-input-group">
+                                    <input type="number" id="timer-minutes" min="0" max="59" value="5"
+                                           inputmode="numeric" pattern="[0-9]*">
+                                    <label>min</label>
+                                </div>
+                                <span class="timer-separator">:</span>
+                                <div class="timer-input-group">
+                                    <input type="number" id="timer-seconds" min="0" max="59" value="0"
+                                           inputmode="numeric" pattern="[0-9]*">
+                                    <label>sec</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="timer-presets">
-                        <button class="preset-btn" data-minutes="1">1 min</button>
-                        <button class="preset-btn" data-minutes="3">3 min</button>
-                        <button class="preset-btn" data-minutes="5">5 min</button>
-                        <button class="preset-btn" data-minutes="10">10 min</button>
-                        <button class="preset-btn" data-minutes="15">15 min</button>
-                        <button class="preset-btn" data-minutes="30">30 min</button>
+                        <div class="presets-title">Durées rapides</div>
+                        <div class="presets-grid">
+                            <button class="preset-btn" data-seconds="30">30s</button>
+                            <button class="preset-btn" data-seconds="60">1m</button>
+                            <button class="preset-btn" data-seconds="180">3m</button>
+                            <button class="preset-btn" data-seconds="300">5m</button>
+                            <button class="preset-btn" data-seconds="600">10m</button>
+                            <button class="preset-btn" data-seconds="900">15m</button>
+                            <button class="preset-btn" data-seconds="1800">30m</button>
+                            <button class="preset-btn" data-seconds="3600">1h</button>
+                        </div>
                     </div>
                     <div class="timer-sound-select">
                         <label for="timer-sound">Son de fin</label>
@@ -136,26 +381,265 @@
                         <input type="file" id="timer-custom-sound-input" accept="audio/mp3,audio/mpeg,audio/wav,audio/*">
                         <span class="custom-sound-name" id="timer-custom-sound-name"></span>
                     </div>
-                    <button class="control-btn primary large" id="timer-start-btn">Démarrer</button>
+                    <button class="main-control-btn play-btn timer-start-btn" id="timer-start-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="timer-running" id="timer-running" style="display: none;">
-                    <div class="timer-circle">
-                        <svg class="timer-progress" viewBox="0 0 100 100">
-                            <circle class="timer-bg" cx="50" cy="50" r="45"/>
-                            <circle class="timer-fg" cx="50" cy="50" r="45" id="timer-progress-circle"/>
+                    <div class="timer-circle-progress">
+                        <svg class="timer-progress-svg" viewBox="0 0 100 100">
+                            <circle class="timer-bg-circle" cx="50" cy="50" r="45"/>
+                            <circle class="timer-fg-circle" cx="50" cy="50" r="45" id="timer-progress-circle"/>
                         </svg>
-                        <div class="timer-display" id="timer-display">00:00:00</div>
+                        <div class="timer-display" id="timer-display">00:00</div>
+                        <div class="timer-subtext" id="timer-subtext">En cours...</div>
                     </div>
                     <div class="timer-controls">
-                        <button class="control-btn secondary" id="timer-cancel">Annuler</button>
-                        <button class="control-btn primary" id="timer-pause">Pause</button>
+                        <button class="round-btn reset-btn" id="timer-cancel">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                            <span>Annuler</span>
+                        </button>
+                        <button class="main-control-btn pause-active" id="timer-pause">
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="pause-icon">
+                                <rect x="6" y="4" width="4" height="16"/>
+                                <rect x="14" y="4" width="4" height="16"/>
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="play-icon" style="display:none">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                        </button>
+                        <button class="round-btn settings-btn" id="timer-settings">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            <span>Config</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rounds Tab -->
+            <section id="rounds-tab" class="tab-content">
+                <div class="rounds-header">
+                    <h2>Timer de Rounds</h2>
+                    <div class="rounds-header-actions">
+                        <button class="icon-btn" id="rounds-mute-btn" title="Mute">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="volume-on">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="volume-off" style="display:none">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                <line x1="23" y1="9" x2="17" y2="15"/>
+                                <line x1="17" y1="9" x2="23" y2="15"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="rounds-settings-btn" title="Configuration">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rounds-indicator" id="rounds-indicator">
+                    ROUND <span id="current-round">1</span> / <span id="total-rounds">3</span>
+                </div>
+
+                <div class="rounds-circle-container">
+                    <div class="rounds-circle" id="rounds-circle">
+                        <svg class="rounds-progress-svg" viewBox="0 0 100 100">
+                            <circle class="rounds-bg-circle" cx="50" cy="50" r="45"/>
+                            <circle class="rounds-fg-circle" cx="50" cy="50" r="45" id="rounds-progress-circle"/>
+                        </svg>
+                        <div class="rounds-inner">
+                            <div class="rounds-phase" id="rounds-phase">PRÉPARATION</div>
+                            <div class="rounds-time" id="rounds-time">0:10</div>
+                            <div class="rounds-subtext" id="rounds-subtext">Préparez-vous...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounds-controls">
+                    <button class="round-btn reset-btn" id="rounds-reset">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                        <span>Reset</span>
+                    </button>
+                    <button class="main-control-btn play-btn" id="rounds-start">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="play-icon">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="pause-icon" style="display:none">
+                            <rect x="6" y="4" width="4" height="16"/>
+                            <rect x="14" y="4" width="4" height="16"/>
+                        </svg>
+                    </button>
+                    <button class="round-btn skip-btn" id="rounds-skip" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 4 15 12 5 20 5 4"/>
+                            <line x1="19" y1="5" x2="19" y2="19"/>
+                        </svg>
+                        <span>Skip</span>
+                    </button>
+                </div>
+
+                <div class="rounds-config" id="rounds-config">
+                    <div class="rounds-config-title">Configuration actuelle</div>
+                    <div class="rounds-config-grid">
+                        <div class="rounds-config-item">
+                            <span class="config-value" id="config-rounds">3</span>
+                            <span class="config-label">Rounds</span>
+                        </div>
+                        <div class="rounds-config-item">
+                            <span class="config-value" id="config-round-time">3:00</span>
+                            <span class="config-label">Round</span>
+                        </div>
+                        <div class="rounds-config-item">
+                            <span class="config-value" id="config-rest-time">1:00</span>
+                            <span class="config-label">Repos</span>
+                        </div>
+                        <div class="rounds-config-item">
+                            <span class="config-value" id="config-prepare">10s</span>
+                            <span class="config-label">Préparation</span>
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- MODALES GLOBALES (en dehors des onglets pour être toujours visibles) -->
+    <!-- MODALES GLOBALES -->
+
+    <!-- Clock Selector Modal -->
+    <div class="modal" id="clock-selector-modal">
+        <div class="modal-content clock-selector-content">
+            <div class="modal-header">
+                <button class="modal-close-btn" id="close-clock-selector">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <h3>Choisir une horloge</h3>
+                <div style="width:32px"></div>
+            </div>
+            <p class="modal-subtitle">Sélectionnez le style d'horloge qui vous convient</p>
+            <div class="clock-options">
+                <button class="clock-option active" data-clock="digital">
+                    <div class="clock-option-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Digitale</span>
+                        <span class="clock-option-desc">Horloge classique</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="clock-option" data-clock="holographic">
+                    <div class="clock-option-icon holo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Holographique</span>
+                        <span class="clock-option-desc">HUD futuriste avec anneaux</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="clock-option" data-clock="fluid">
+                    <div class="clock-option-icon fluid">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Fluide</span>
+                        <span class="clock-option-desc">Style cyan avec animations</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="clock-option" data-clock="flap-dark">
+                    <div class="clock-option-icon flap-dark">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Flip-Flap Sombre</span>
+                        <span class="clock-option-desc">Style rétro split-flap</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="clock-option" data-clock="flap-light">
+                    <div class="clock-option-icon flap-light">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Flip-Flap Clair</span>
+                        <span class="clock-option-desc">Style rétro lumineux</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+                <button class="clock-option" data-clock="golden">
+                    <div class="clock-option-icon golden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a7 7 0 0 0 0 14"/>
+                        </svg>
+                    </div>
+                    <div class="clock-option-info">
+                        <span class="clock-option-name">Dorée</span>
+                        <span class="clock-option-desc">Horloge dorée élégante</span>
+                    </div>
+                    <div class="clock-option-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Alarm Edit Modal -->
     <div class="modal" id="alarm-modal">
@@ -220,39 +704,171 @@
         </div>
     </div>
 
-    <!-- Alarm Ringing Modal - GLOBAL pour s'afficher sur tous les onglets -->
+    <!-- Rounds Settings Modal -->
+    <div class="modal" id="rounds-modal">
+        <div class="modal-content rounds-settings-content">
+            <div class="modal-header">
+                <button class="modal-close-btn" id="close-rounds-modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <h3>Configuration</h3>
+                <div style="width:32px"></div>
+            </div>
+
+            <div class="rounds-presets">
+                <div class="presets-title">Préréglages</div>
+                <div class="rounds-presets-grid">
+                    <button class="rounds-preset-btn" data-preset="boxe">
+                        <span class="preset-name">Boxe (3 min)</span>
+                        <span class="preset-details">3 rounds × 3:00</span>
+                    </button>
+                    <button class="rounds-preset-btn" data-preset="hiit">
+                        <span class="preset-name">HIIT (30s)</span>
+                        <span class="preset-details">8 rounds × 0:30</span>
+                    </button>
+                    <button class="rounds-preset-btn" data-preset="tabata">
+                        <span class="preset-name">Tabata (20s)</span>
+                        <span class="preset-details">8 rounds × 0:20</span>
+                    </button>
+                    <button class="rounds-preset-btn" data-preset="combat">
+                        <span class="preset-name">Combat (5 min)</span>
+                        <span class="preset-details">5 rounds × 5:00</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="rounds-custom-config">
+                <div class="presets-title">Configuration personnalisée</div>
+                <div class="config-row">
+                    <span class="config-row-label">Nombre de rounds</span>
+                    <div class="config-row-controls">
+                        <button class="config-btn" data-action="rounds-minus">-</button>
+                        <span class="config-row-value" id="modal-rounds">3</span>
+                        <button class="config-btn" data-action="rounds-plus">+</button>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <span class="config-row-label">Durée du round</span>
+                    <div class="config-row-controls">
+                        <button class="config-btn" data-action="round-minus">-10s</button>
+                        <span class="config-row-value" id="modal-round-time">3:00</span>
+                        <button class="config-btn" data-action="round-plus">+10s</button>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <span class="config-row-label">Durée du repos</span>
+                    <div class="config-row-controls">
+                        <button class="config-btn" data-action="rest-minus">-5s</button>
+                        <span class="config-row-value" id="modal-rest-time">1:00</span>
+                        <button class="config-btn" data-action="rest-plus">+5s</button>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <span class="config-row-label">Préparation</span>
+                    <div class="config-row-controls">
+                        <button class="config-btn" data-action="prepare-minus">-1s</button>
+                        <span class="config-row-value" id="modal-prepare">10s</span>
+                        <button class="config-btn" data-action="prepare-plus">+1s</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-save rounds-apply-btn" id="rounds-apply-btn">Appliquer et réinitialiser</button>
+        </div>
+    </div>
+
+    <!-- Alarm Ringing Modal -->
     <div class="modal alarm-ringing-modal" id="alarm-ringing-modal">
         <div class="modal-content ringing-content">
-            <div class="ringing-animation">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ringing-icon">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <button class="modal-close-btn ringing-close" id="ringing-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
+            </button>
+            <div class="ringing-icon-container">
+                <div class="ringing-icon-bg alarm-bg"></div>
+                <div class="ringing-emoji">⏰</div>
             </div>
             <div class="ringing-time" id="ringing-time">07:00</div>
             <div class="ringing-label" id="ringing-label">Réveil</div>
             <div class="ringing-actions">
-                <button class="btn-snooze" id="snooze-btn">
-                    <span>Répéter</span>
-                    <small>+3 min</small>
+                <button class="ringing-btn stop-btn" id="stop-sound-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <line x1="23" y1="9" x2="17" y2="15"/>
+                        <line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                    Arrêter le son
                 </button>
-                <button class="btn-dismiss" id="dismiss-btn">Arrêter</button>
+                <div class="ringing-main-actions">
+                    <button class="btn-snooze" id="snooze-btn">
+                        <span>Répéter</span>
+                        <small>+3 min</small>
+                    </button>
+                    <button class="btn-dismiss" id="dismiss-btn">OK</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Timer Finished Modal - GLOBAL pour s'afficher sur tous les onglets -->
+    <!-- Timer Finished Modal -->
     <div class="modal timer-finished-modal" id="timer-finished-modal">
         <div class="modal-content ringing-content">
-            <div class="ringing-animation">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ringing-icon">
-                    <path d="M6 2v6h.01L6 8l4 4-4 4v6h12v-6l-4-4 4-4V2H6z"/>
+            <button class="modal-close-btn ringing-close" id="timer-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
+            </button>
+            <div class="ringing-icon-container">
+                <div class="ringing-icon-bg timer-bg"></div>
+                <div class="ringing-emoji">⏰</div>
             </div>
             <div class="ringing-time">Temps écoulé !</div>
             <div class="ringing-label" id="timer-finished-duration"></div>
             <div class="ringing-actions">
-                <button class="btn-dismiss" id="timer-dismiss-btn">OK</button>
+                <button class="ringing-btn stop-btn" id="timer-stop-sound-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <line x1="23" y1="9" x2="17" y2="15"/>
+                        <line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                    Arrêter le son
+                </button>
+                <button class="btn-dismiss full-width" id="timer-dismiss-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rounds Finished Modal -->
+    <div class="modal rounds-finished-modal" id="rounds-finished-modal">
+        <div class="modal-content ringing-content">
+            <button class="modal-close-btn ringing-close" id="rounds-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="ringing-icon-container">
+                <div class="ringing-icon-bg rounds-bg"></div>
+                <div class="ringing-emoji">🥊</div>
+            </div>
+            <div class="ringing-time">Entraînement terminé !</div>
+            <div class="ringing-label" id="rounds-finished-text">Vous avez complété 3 rounds !</div>
+            <div class="ringing-actions">
+                <button class="ringing-btn stop-btn" id="rounds-stop-sound-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <line x1="23" y1="9" x2="17" y2="15"/>
+                        <line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                    Arrêter le son
+                </button>
+                <button class="btn-dismiss full-width" id="rounds-dismiss-btn">OK</button>
             </div>
         </div>
     </div>

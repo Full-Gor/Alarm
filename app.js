@@ -1,6 +1,6 @@
 /**
  * Alarm Clock Application
- * Full-featured clock app with alarm, stopwatch, and timer
+ * Full-featured clock app with multiple clock types, alarm, stopwatch, timer, and rounds
  */
 
 // ============================================
@@ -14,6 +14,7 @@ class AudioManager {
         this.currentlyPlaying = null;
         this.oscillator = null;
         this.gainNode = null;
+        this.muted = false;
     }
 
     initAudioContext() {
@@ -25,8 +26,8 @@ class AudioManager {
         }
     }
 
-    // Generate beep sounds using Web Audio API
     generateBeepSound(type = 'default') {
+        if (this.muted) return;
         this.initAudioContext();
         this.stopAll();
 
@@ -64,8 +65,8 @@ class AudioManager {
         playNote();
     }
 
-    // Play custom uploaded audio
     playCustomAudio(audioData) {
+        if (this.muted) return;
         this.stopAll();
         this.customAudioElement.src = audioData;
         this.customAudioElement.loop = true;
@@ -76,8 +77,8 @@ class AudioManager {
         this.currentlyPlaying = 'custom';
     }
 
-    // Play sound based on type
     play(soundType, customAudioData = null) {
+        if (this.muted) return;
         if (soundType === 'custom' && customAudioData) {
             this.playCustomAudio(customAudioData);
         } else {
@@ -85,7 +86,26 @@ class AudioManager {
         }
     }
 
-    // Stop all audio
+    playBeep(count = 1, frequency = 800) {
+        if (this.muted) return;
+        this.initAudioContext();
+
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                const osc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(this.audioContext.destination);
+                osc.frequency.value = frequency;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+                osc.start();
+                osc.stop(this.audioContext.currentTime + 0.15);
+            }, i * 200);
+        }
+    }
+
     stopAll() {
         if (this.currentlyPlaying === 'custom') {
             this.customAudioElement.pause();
@@ -95,22 +115,24 @@ class AudioManager {
             clearInterval(this.currentlyPlaying);
         }
         if (this.oscillator) {
-            try {
-                this.oscillator.stop();
-            } catch (e) {}
+            try { this.oscillator.stop(); } catch (e) {}
         }
         this.currentlyPlaying = null;
     }
 
-    // Test sound preview
     testSound(soundType, customAudioData = null, duration = 2000) {
         this.play(soundType, customAudioData);
         setTimeout(() => this.stopAll(), duration);
     }
+
+    setMuted(muted) {
+        this.muted = muted;
+        if (muted) this.stopAll();
+    }
 }
 
 // ============================================
-// Storage Manager - Handles localStorage
+// Storage Manager
 // ============================================
 class StorageManager {
     static save(key, data) {
@@ -130,14 +152,6 @@ class StorageManager {
             return defaultValue;
         }
     }
-
-    static remove(key) {
-        try {
-            localStorage.removeItem(key);
-        } catch (e) {
-            console.error('Storage remove error:', e);
-        }
-    }
 }
 
 // ============================================
@@ -149,39 +163,28 @@ class NotificationManager {
     }
 
     async requestPermission() {
-        if (!('Notification' in window)) {
-            console.log('Notifications not supported');
-            return false;
-        }
-
-        if (this.permission === 'granted') {
-            return true;
-        }
-
+        if (!('Notification' in window)) return false;
+        if (this.permission === 'granted') return true;
         if (this.permission !== 'denied') {
             const result = await Notification.requestPermission();
             this.permission = result;
             return result === 'granted';
         }
-
         return false;
     }
 
     show(title, options = {}) {
         if (this.permission === 'granted') {
             const notification = new Notification(title, {
-                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236366f1"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>',
-                badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236366f1"><circle cx="12" cy="12" r="10"/></svg>',
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238b5cf6"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>',
                 vibrate: [200, 100, 200],
                 requireInteraction: true,
                 ...options
             });
-
             notification.onclick = () => {
                 window.focus();
                 notification.close();
             };
-
             return notification;
         }
         return null;
@@ -189,49 +192,239 @@ class NotificationManager {
 }
 
 // ============================================
-// Clock Module
+// Clock Module with Multiple Types
 // ============================================
 class ClockModule {
     constructor() {
+        this.currentType = StorageManager.load('clockType', 'digital');
+        this.interval = null;
+        this.msInterval = null;
+
+        this.initElements();
+        this.initEventListeners();
+        this.switchClockType(this.currentType);
+        this.start();
+    }
+
+    initElements() {
+        // Digital
         this.digitalClock = document.getElementById('digital-clock');
         this.dateDisplay = document.getElementById('date-display');
         this.hourHand = document.getElementById('hour-hand');
         this.minuteHand = document.getElementById('minute-hand');
         this.secondHand = document.getElementById('second-hand');
 
-        this.start();
+        // Holographic
+        this.holoTime = document.getElementById('holo-time');
+        this.holoDate = document.getElementById('holo-date');
+        this.holoHourRing = document.getElementById('holo-hour-ring');
+        this.holoMinRing = document.getElementById('holo-min-ring');
+        this.holoSecRing = document.getElementById('holo-sec-ring');
+        this.holoMsRing = document.getElementById('holo-ms-ring');
+
+        // Fluid
+        this.fluidDate = document.getElementById('fluid-date');
+
+        // Flap dates
+        this.flapDarkDate = document.getElementById('flap-dark-date');
+        this.flapLightDate = document.getElementById('flap-light-date');
+
+        // Golden
+        this.goldenTime = document.getElementById('golden-time');
+        this.goldenDate = document.getElementById('golden-date');
+        this.goldenHour = document.getElementById('golden-hour');
+        this.goldenMinute = document.getElementById('golden-minute');
+        this.goldenSecond = document.getElementById('golden-second');
+
+        // Clock selector
+        this.selectorBtn = document.getElementById('clock-selector-btn');
+        this.selectorModal = document.getElementById('clock-selector-modal');
+        this.closeBtn = document.getElementById('close-clock-selector');
+        this.clockOptions = document.querySelectorAll('.clock-option');
+        this.clockTypes = document.querySelectorAll('.clock-type');
+    }
+
+    initEventListeners() {
+        this.selectorBtn.addEventListener('click', () => this.openSelector());
+        this.closeBtn.addEventListener('click', () => this.closeSelector());
+        this.selectorModal.addEventListener('click', (e) => {
+            if (e.target === this.selectorModal) this.closeSelector();
+        });
+
+        this.clockOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const type = option.dataset.clock;
+                this.switchClockType(type);
+                this.closeSelector();
+            });
+        });
+    }
+
+    openSelector() {
+        this.selectorModal.classList.add('active');
+    }
+
+    closeSelector() {
+        this.selectorModal.classList.remove('active');
+    }
+
+    switchClockType(type) {
+        this.currentType = type;
+        StorageManager.save('clockType', type);
+
+        // Update UI
+        this.clockTypes.forEach(el => el.classList.remove('active'));
+        this.clockOptions.forEach(opt => opt.classList.remove('active'));
+
+        const typeEl = document.getElementById(`clock-${type}`);
+        if (typeEl) typeEl.classList.add('active');
+
+        const optionEl = document.querySelector(`[data-clock="${type}"]`);
+        if (optionEl) optionEl.classList.add('active');
+
+        // Clear ms interval if not holographic
+        if (this.msInterval && type !== 'holographic') {
+            clearInterval(this.msInterval);
+            this.msInterval = null;
+        }
+
+        // Start ms interval for holographic
+        if (type === 'holographic' && !this.msInterval) {
+            this.msInterval = setInterval(() => this.updateHolographicMs(), 50);
+        }
     }
 
     start() {
         this.update();
-        setInterval(() => this.update(), 1000);
+        this.interval = setInterval(() => this.update(), 1000);
     }
 
     update() {
         const now = new Date();
-
-        // Digital clock
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        this.digitalClock.textContent = `${hours}:${minutes}:${seconds}`;
-
-        // Date display
-        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-        this.dateDisplay.textContent = now.toLocaleDateString('fr-FR', options);
-
-        // Analog clock
-        const h = now.getHours() % 12;
+        const h = now.getHours();
         const m = now.getMinutes();
         const s = now.getSeconds();
+        const h12 = h % 12;
 
-        const hourDeg = (h * 30) + (m * 0.5);
+        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        const dateStr = now.toLocaleDateString('fr-FR', options);
+
+        // Digital
+        if (this.digitalClock) this.digitalClock.textContent = timeStr;
+        if (this.dateDisplay) this.dateDisplay.textContent = dateStr;
+
+        // Analog hands
+        const hourDeg = (h12 * 30) + (m * 0.5);
         const minuteDeg = (m * 6) + (s * 0.1);
         const secondDeg = s * 6;
 
-        this.hourHand.style.transform = `rotate(${hourDeg}deg)`;
-        this.minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
-        this.secondHand.style.transform = `rotate(${secondDeg}deg)`;
+        if (this.hourHand) this.hourHand.style.transform = `rotate(${hourDeg}deg)`;
+        if (this.minuteHand) this.minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
+        if (this.secondHand) this.secondHand.style.transform = `rotate(${secondDeg}deg)`;
+
+        // Holographic
+        if (this.holoTime) this.holoTime.textContent = timeStr;
+        if (this.holoDate) this.holoDate.textContent = dateStr;
+        this.updateHolographicRings(h, m, s);
+
+        // Fluid
+        this.updateFluid(h, m, s);
+        if (this.fluidDate) this.fluidDate.textContent = dateStr;
+
+        // Flap
+        this.updateFlap('flap-dark', h, m, s);
+        this.updateFlap('flap-light', h, m, s);
+        if (this.flapDarkDate) this.flapDarkDate.textContent = dateStr;
+        if (this.flapLightDate) this.flapLightDate.textContent = dateStr;
+
+        // Golden
+        if (this.goldenTime) this.goldenTime.textContent = timeStr;
+        if (this.goldenDate) this.goldenDate.textContent = dateStr;
+        this.updateGoldenHands(h12, m, s);
+    }
+
+    updateHolographicRings(h, m, s) {
+        const hourCircum = 2 * Math.PI * 130;
+        const minCircum = 2 * Math.PI * 105;
+        const secCircum = 2 * Math.PI * 80;
+
+        const hourProgress = ((h % 12) + m / 60) / 12;
+        const minProgress = (m + s / 60) / 60;
+        const secProgress = s / 60;
+
+        if (this.holoHourRing) {
+            this.holoHourRing.style.strokeDashoffset = hourCircum * (1 - hourProgress);
+        }
+        if (this.holoMinRing) {
+            this.holoMinRing.style.strokeDashoffset = minCircum * (1 - minProgress);
+        }
+        if (this.holoSecRing) {
+            this.holoSecRing.style.strokeDashoffset = secCircum * (1 - secProgress);
+        }
+    }
+
+    updateHolographicMs() {
+        const ms = Date.now() % 1000;
+        const msCircum = 2 * Math.PI * 55;
+        const msProgress = ms / 1000;
+
+        if (this.holoMsRing) {
+            this.holoMsRing.style.strokeDashoffset = msCircum * (1 - msProgress);
+        }
+    }
+
+    updateFluid(h, m, s) {
+        const digits = [
+            ['fluid-h0', Math.floor(h / 10)],
+            ['fluid-h1', h % 10],
+            ['fluid-m0', Math.floor(m / 10)],
+            ['fluid-m1', m % 10],
+            ['fluid-s0', Math.floor(s / 10)],
+            ['fluid-s1', s % 10]
+        ];
+
+        digits.forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        });
+    }
+
+    updateFlap(prefix, h, m, s) {
+        const digits = [
+            [`${prefix}-h0`, Math.floor(h / 10)],
+            [`${prefix}-h1`, h % 10],
+            [`${prefix}-m0`, Math.floor(m / 10)],
+            [`${prefix}-m1`, m % 10],
+            [`${prefix}-s0`, Math.floor(s / 10)],
+            [`${prefix}-s1`, s % 10]
+        ];
+
+        digits.forEach(([digit, value]) => {
+            const el = document.querySelector(`[data-digit="${digit}"]`);
+            if (el) {
+                const topSpan = el.querySelector('.flap-top span');
+                const bottomSpan = el.querySelector('.flap-bottom span');
+                if (topSpan) topSpan.textContent = value;
+                if (bottomSpan) bottomSpan.textContent = value;
+            }
+        });
+    }
+
+    updateGoldenHands(h12, m, s) {
+        const hourAngle = (h12 + m / 60) * 30;
+        const minAngle = (m + s / 60) * 6;
+        const secAngle = s * 6;
+
+        if (this.goldenHour) {
+            this.goldenHour.setAttribute('transform', `rotate(${hourAngle}, 150, 150)`);
+        }
+        if (this.goldenMinute) {
+            this.goldenMinute.setAttribute('transform', `rotate(${minAngle}, 150, 150)`);
+        }
+        if (this.goldenSecond) {
+            this.goldenSecond.setAttribute('transform', `rotate(${secAngle}, 150, 150)`);
+        }
     }
 }
 
@@ -245,7 +438,6 @@ class AlarmModule {
         this.alarms = StorageManager.load('alarms', []);
         this.editingAlarmId = null;
         this.ringingAlarm = null;
-        this.checkInterval = null;
 
         this.initElements();
         this.initEventListeners();
@@ -269,7 +461,6 @@ class AlarmModule {
         this.cancelBtn = document.getElementById('cancel-alarm');
         this.saveBtn = document.getElementById('save-alarm');
         this.dayBtns = document.querySelectorAll('.day-btn');
-        this.editingAlarmIdInput = document.getElementById('editing-alarm-id');
 
         // Ringing modal
         this.ringingModal = document.getElementById('alarm-ringing-modal');
@@ -277,6 +468,8 @@ class AlarmModule {
         this.ringingLabel = document.getElementById('ringing-label');
         this.snoozeBtn = document.getElementById('snooze-btn');
         this.dismissBtn = document.getElementById('dismiss-btn');
+        this.stopSoundBtn = document.getElementById('stop-sound-btn');
+        this.ringingCloseBtn = document.getElementById('ringing-close-btn');
     }
 
     initEventListeners() {
@@ -284,64 +477,41 @@ class AlarmModule {
         this.cancelBtn.addEventListener('click', () => this.closeModal());
         this.saveBtn.addEventListener('click', () => this.saveAlarm());
 
-        // Sound selection
         this.soundSelect.addEventListener('change', () => {
-            this.customSoundGroup.style.display =
-                this.soundSelect.value === 'custom' ? 'block' : 'none';
+            this.customSoundGroup.style.display = this.soundSelect.value === 'custom' ? 'block' : 'none';
         });
 
-        // Custom sound upload
         this.customSoundInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) {
-                this.customSoundName.textContent = file.name;
-            }
+            if (file) this.customSoundName.textContent = file.name;
         });
 
-        // Test sound
         this.testSoundBtn.addEventListener('click', () => this.testAlarmSound());
 
-        // Day buttons
         this.dayBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.classList.toggle('active');
-            });
+            btn.addEventListener('click', () => btn.classList.toggle('active'));
         });
 
-        // Input validation and keyboard support
         [this.hoursInput, this.minutesInput].forEach(input => {
             input.addEventListener('input', (e) => this.validateTimeInput(e.target));
             input.addEventListener('keydown', (e) => this.handleTimeKeydown(e));
             input.addEventListener('focus', (e) => e.target.select());
         });
 
-        // Ringing modal buttons - use pointerup for unified touch/mouse support
-        const handleSnooze = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Snooze button pressed');
-            this.snoozeAlarm();
-        };
+        // Ringing modal buttons
+        const handleSnooze = (e) => { e.preventDefault(); this.snoozeAlarm(); };
+        const handleDismiss = (e) => { e.preventDefault(); this.dismissAlarm(); };
+        const handleStopSound = (e) => { e.preventDefault(); this.audioManager.stopAll(); };
 
-        const handleDismiss = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Dismiss button pressed');
-            this.dismissAlarm();
-        };
-
-        // Use multiple event types for maximum compatibility
-        this.snoozeBtn.addEventListener('pointerup', handleSnooze);
         this.snoozeBtn.addEventListener('click', handleSnooze);
-        this.dismissBtn.addEventListener('pointerup', handleDismiss);
         this.dismissBtn.addEventListener('click', handleDismiss);
+        this.stopSoundBtn.addEventListener('click', handleStopSound);
+        this.ringingCloseBtn.addEventListener('click', handleDismiss);
 
-        // Close modal on outside click
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) this.closeModal();
         });
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (this.ringingModal.classList.contains('active')) {
                 if (e.key === 'Escape' || e.key === ' ') {
@@ -352,9 +522,6 @@ class AlarmModule {
                     this.snoozeAlarm();
                 }
             }
-            if (this.modal.classList.contains('active') && e.key === 'Escape') {
-                this.closeModal();
-            }
         });
     }
 
@@ -362,25 +529,20 @@ class AlarmModule {
         let value = parseInt(input.value) || 0;
         const max = parseInt(input.max);
         const min = parseInt(input.min);
-
         if (value > max) value = max;
         if (value < min) value = min;
-
         input.value = value;
     }
 
     handleTimeKeydown(e) {
         const input = e.target;
         const value = parseInt(input.value) || 0;
-
         if (e.key === 'ArrowUp') {
             e.preventDefault();
             input.value = value >= parseInt(input.max) ? parseInt(input.min) : value + 1;
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             input.value = value <= parseInt(input.min) ? parseInt(input.max) : value - 1;
-        } else if (e.key === 'Tab' || e.key === 'Enter') {
-            // Allow normal tab behavior
         }
     }
 
@@ -394,11 +556,7 @@ class AlarmModule {
             this.labelInput.value = alarm.label || '';
             this.soundSelect.value = alarm.sound || 'default';
             this.customSoundGroup.style.display = alarm.sound === 'custom' ? 'block' : 'none';
-            if (alarm.customSoundName) {
-                this.customSoundName.textContent = alarm.customSoundName;
-            }
-
-            // Set active days
+            if (alarm.customSoundName) this.customSoundName.textContent = alarm.customSoundName;
             this.dayBtns.forEach(btn => {
                 const day = parseInt(btn.dataset.day);
                 btn.classList.toggle('active', alarm.days && alarm.days.includes(day));
@@ -416,7 +574,6 @@ class AlarmModule {
 
         this.modal.classList.add('active');
         this.hoursInput.focus();
-        this.hoursInput.select();
     }
 
     closeModal() {
@@ -427,17 +584,14 @@ class AlarmModule {
 
     async testAlarmSound() {
         const soundType = this.soundSelect.value;
-
         if (soundType === 'custom') {
             const file = this.customSoundInput.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.audioManager.testSound('custom', e.target.result, 3000);
-                };
+                reader.onload = (e) => this.audioManager.testSound('custom', e.target.result, 3000);
                 reader.readAsDataURL(file);
             } else {
-                alert('Veuillez d\'abord sélectionner un fichier audio');
+                alert('Veuillez sélectionner un fichier audio');
             }
         } else {
             this.audioManager.testSound(soundType, null, 2000);
@@ -449,12 +603,9 @@ class AlarmModule {
         const minutes = parseInt(this.minutesInput.value);
         const label = this.labelInput.value.trim();
         const sound = this.soundSelect.value;
-        const days = Array.from(this.dayBtns)
-            .filter(btn => btn.classList.contains('active'))
-            .map(btn => parseInt(btn.dataset.day));
+        const days = Array.from(this.dayBtns).filter(btn => btn.classList.contains('active')).map(btn => parseInt(btn.dataset.day));
 
-        let customSoundData = null;
-        let customSoundName = '';
+        let customSoundData = null, customSoundName = '';
 
         if (sound === 'custom') {
             const file = this.customSoundInput.files[0];
@@ -462,33 +613,23 @@ class AlarmModule {
                 customSoundData = await this.readFileAsDataURL(file);
                 customSoundName = file.name;
             } else if (this.editingAlarmId) {
-                // Keep existing custom sound if editing
-                const existingAlarm = this.alarms.find(a => a.id === this.editingAlarmId);
-                if (existingAlarm) {
-                    customSoundData = existingAlarm.customSoundData;
-                    customSoundName = existingAlarm.customSoundName;
+                const existing = this.alarms.find(a => a.id === this.editingAlarmId);
+                if (existing) {
+                    customSoundData = existing.customSoundData;
+                    customSoundName = existing.customSoundName;
                 }
             }
         }
 
         const alarm = {
             id: this.editingAlarmId || Date.now().toString(),
-            hours,
-            minutes,
-            label,
-            sound,
-            days,
-            customSoundData,
-            customSoundName,
-            enabled: true,
-            lastTriggered: null
+            hours, minutes, label, sound, days, customSoundData, customSoundName,
+            enabled: true, lastTriggered: null
         };
 
         if (this.editingAlarmId) {
             const index = this.alarms.findIndex(a => a.id === this.editingAlarmId);
-            if (index !== -1) {
-                this.alarms[index] = alarm;
-            }
+            if (index !== -1) this.alarms[index] = alarm;
         } else {
             this.alarms.push(alarm);
         }
@@ -507,10 +648,7 @@ class AlarmModule {
         });
     }
 
-    saveAlarms() {
-        StorageManager.save('alarms', this.alarms);
-    }
-
+    saveAlarms() { StorageManager.save('alarms', this.alarms); }
     deleteAlarm(id) {
         this.alarms = this.alarms.filter(a => a.id !== id);
         this.saveAlarms();
@@ -521,7 +659,7 @@ class AlarmModule {
         const alarm = this.alarms.find(a => a.id === id);
         if (alarm) {
             alarm.enabled = !alarm.enabled;
-            alarm.lastTriggered = null; // Reset so it can trigger again
+            alarm.lastTriggered = null;
             this.saveAlarms();
             this.renderAlarms();
         }
@@ -533,25 +671,17 @@ class AlarmModule {
             return;
         }
 
-        const dayNames = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
         const fullDayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
         this.alarmList.innerHTML = this.alarms.map(alarm => {
             const timeStr = `${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`;
-            let daysStr = '';
+            let daysStr = 'Une seule fois';
 
             if (alarm.days && alarm.days.length > 0) {
-                if (alarm.days.length === 7) {
-                    daysStr = 'Tous les jours';
-                } else if (JSON.stringify(alarm.days.sort()) === JSON.stringify([1, 2, 3, 4, 5])) {
-                    daysStr = 'En semaine';
-                } else if (JSON.stringify(alarm.days.sort()) === JSON.stringify([0, 6])) {
-                    daysStr = 'Week-end';
-                } else {
-                    daysStr = alarm.days.map(d => fullDayNames[d]).join(', ');
-                }
-            } else {
-                daysStr = 'Une seule fois';
+                if (alarm.days.length === 7) daysStr = 'Tous les jours';
+                else if (JSON.stringify(alarm.days.sort()) === JSON.stringify([1,2,3,4,5])) daysStr = 'En semaine';
+                else if (JSON.stringify(alarm.days.sort()) === JSON.stringify([0,6])) daysStr = 'Week-end';
+                else daysStr = alarm.days.map(d => fullDayNames[d]).join(', ');
             }
 
             return `
@@ -563,11 +693,10 @@ class AlarmModule {
                     </div>
                     <div class="alarm-actions">
                         <label class="toggle-switch">
-                            <input type="checkbox" ${alarm.enabled ? 'checked' : ''}
-                                   onchange="app.alarm.toggleAlarm('${alarm.id}')">
+                            <input type="checkbox" ${alarm.enabled ? 'checked' : ''} onchange="app.alarm.toggleAlarm('${alarm.id}')">
                             <span class="toggle-slider"></span>
                         </label>
-                        <button class="delete-alarm-btn" onclick="app.alarm.deleteAlarm('${alarm.id}')" title="Supprimer">
+                        <button class="delete-alarm-btn" onclick="app.alarm.deleteAlarm('${alarm.id}')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                                 <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
@@ -579,12 +708,11 @@ class AlarmModule {
     }
 
     startChecking() {
-        // Check alarms every second
-        this.checkInterval = setInterval(() => this.checkAlarms(), 1000);
+        setInterval(() => this.checkAlarms(), 1000);
     }
 
     checkAlarms() {
-        if (this.ringingAlarm) return; // Already ringing
+        if (this.ringingAlarm) return;
 
         const now = new Date();
         const currentHour = now.getHours();
@@ -594,26 +722,14 @@ class AlarmModule {
 
         for (const alarm of this.alarms) {
             if (!alarm.enabled) continue;
-
-            // Check if time matches
             if (alarm.hours === currentHour && alarm.minutes === currentMinute) {
-
-                // Check if already triggered at this time
                 if (alarm.lastTriggeredTime === currentTimeKey) continue;
+                if (alarm.days && alarm.days.length > 0 && !alarm.days.includes(currentDay)) continue;
 
-                // Check days
-                if (alarm.days && alarm.days.length > 0) {
-                    if (!alarm.days.includes(currentDay)) continue;
-                }
-
-                // Trigger the alarm!
                 this.triggerAlarm(alarm);
                 alarm.lastTriggeredTime = currentTimeKey;
 
-                // If it's a one-time alarm, disable it
-                if (!alarm.days || alarm.days.length === 0) {
-                    alarm.enabled = false;
-                }
+                if (!alarm.days || alarm.days.length === 0) alarm.enabled = false;
 
                 this.saveAlarms();
                 this.renderAlarms();
@@ -623,56 +739,30 @@ class AlarmModule {
     }
 
     triggerAlarm(alarm) {
-        console.log('=== ALARM TRIGGERED ===', alarm);
         this.ringingAlarm = alarm;
-
-        // Play sound
         this.audioManager.play(alarm.sound, alarm.customSoundData);
 
-        // Show notification
         this.notificationManager.show(`Alarme: ${alarm.label || 'Réveil'}`, {
             body: `Il est ${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`,
             tag: 'alarm-' + alarm.id
         });
 
-        // Show ringing modal
         const timeStr = `${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`;
         this.ringingTime.textContent = timeStr;
         this.ringingLabel.textContent = alarm.label || 'Alarme';
 
-        // Force show modal
-        this.ringingModal.style.display = 'flex';
-        this.ringingModal.style.opacity = '1';
-        this.ringingModal.style.visibility = 'visible';
-        this.ringingModal.classList.add('active');
-
-        console.log('Modal should be visible now:', this.ringingModal);
-        console.log('Modal classList:', this.ringingModal.classList);
-        console.log('Modal computed display:', window.getComputedStyle(this.ringingModal).display);
+        this.showModal(this.ringingModal);
     }
 
     snoozeAlarm() {
-        console.log('=== SNOOZE ALARM ===');
-
-        // Stop sound first
         this.audioManager.stopAll();
+        this.hideModal(this.ringingModal);
 
-        // Hide modal immediately
-        this.ringingModal.style.display = 'none';
-        this.ringingModal.style.opacity = '0';
-        this.ringingModal.style.visibility = 'hidden';
-        this.ringingModal.classList.remove('active');
-
-        if (!this.ringingAlarm) {
-            console.log('No ringing alarm to snooze');
-            return;
-        }
+        if (!this.ringingAlarm) return;
 
         const alarmToSnooze = this.ringingAlarm;
         this.ringingAlarm = null;
-        console.log('Creating snooze alarm for:', alarmToSnooze.label);
 
-        // Create a snooze alarm for 3 minutes from now
         const now = new Date();
         now.setMinutes(now.getMinutes() + 3);
 
@@ -682,7 +772,7 @@ class AlarmModule {
             hours: now.getHours(),
             minutes: now.getMinutes(),
             label: (alarmToSnooze.label || 'Alarme') + ' (Répétition)',
-            days: [], // One-time
+            days: [],
             enabled: true,
             lastTriggered: null
         };
@@ -693,19 +783,23 @@ class AlarmModule {
     }
 
     dismissAlarm() {
-        console.log('=== DISMISS ALARM ===');
-
-        // Stop sound first
         this.audioManager.stopAll();
-
-        // Hide modal immediately
-        this.ringingModal.style.display = 'none';
-        this.ringingModal.style.opacity = '0';
-        this.ringingModal.style.visibility = 'hidden';
-        this.ringingModal.classList.remove('active');
-
+        this.hideModal(this.ringingModal);
         this.ringingAlarm = null;
-        console.log('Alarm dismissed, modal closed');
+    }
+
+    showModal(modal) {
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        modal.classList.add('active');
+    }
+
+    hideModal(modal) {
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        modal.classList.remove('active');
     }
 }
 
@@ -715,9 +809,12 @@ class AlarmModule {
 class StopwatchModule {
     constructor() {
         this.display = document.getElementById('stopwatch-display');
+        this.statusDisplay = document.getElementById('stopwatch-status');
+        this.recordingIndicator = document.getElementById('recording-indicator');
         this.startBtn = document.getElementById('stopwatch-start');
         this.resetBtn = document.getElementById('stopwatch-reset');
         this.lapBtn = document.getElementById('stopwatch-lap');
+        this.lapsContainer = document.getElementById('laps-container');
         this.lapsList = document.getElementById('laps-list');
 
         this.running = false;
@@ -734,7 +831,6 @@ class StopwatchModule {
         this.resetBtn.addEventListener('click', () => this.reset());
         this.lapBtn.addEventListener('click', () => this.addLap());
 
-        // Keyboard shortcuts when stopwatch tab is active
         document.addEventListener('keydown', (e) => {
             if (!document.getElementById('stopwatch-tab').classList.contains('active')) return;
             if (e.target.tagName === 'INPUT') return;
@@ -753,46 +849,56 @@ class StopwatchModule {
     }
 
     toggleStart() {
-        if (this.running) {
-            this.stop();
-        } else {
-            this.start();
-        }
+        if (this.running) this.stop();
+        else this.start();
     }
 
     start() {
         this.running = true;
         this.startTime = Date.now() - this.elapsedTime;
-        this.startBtn.textContent = 'Arrêter';
-        this.startBtn.classList.add('stop');
-        this.resetBtn.disabled = true;
-        this.lapBtn.disabled = false;
-
+        this.updateUI();
         this.interval = setInterval(() => this.update(), 10);
     }
 
     stop() {
         this.running = false;
         this.elapsedTime = Date.now() - this.startTime;
-        this.startBtn.textContent = 'Reprendre';
-        this.startBtn.classList.remove('stop');
-        this.resetBtn.disabled = false;
-
         clearInterval(this.interval);
+        this.updateUI();
     }
 
     reset() {
         this.running = false;
         this.elapsedTime = 0;
         this.laps = [];
-        this.startBtn.textContent = 'Démarrer';
-        this.startBtn.classList.remove('stop');
-        this.resetBtn.disabled = true;
-        this.lapBtn.disabled = true;
-
         clearInterval(this.interval);
-        this.display.innerHTML = '00:00:00<span class="ms">.000</span>';
+        this.display.innerHTML = '<span class="stopwatch-main">00:00</span><span class="stopwatch-ms">.00</span>';
+        this.lapsContainer.style.display = 'none';
         this.lapsList.innerHTML = '';
+        this.updateUI();
+    }
+
+    updateUI() {
+        const playIcon = this.startBtn.querySelector('.play-icon');
+        const pauseIcon = this.startBtn.querySelector('.pause-icon');
+
+        if (this.running) {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            this.startBtn.classList.add('running');
+            this.statusDisplay.textContent = 'En cours';
+            this.recordingIndicator.classList.add('active');
+            this.resetBtn.disabled = true;
+            this.lapBtn.disabled = false;
+        } else {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            this.startBtn.classList.remove('running');
+            this.statusDisplay.textContent = this.elapsedTime > 0 ? 'En pause' : 'Prêt';
+            this.recordingIndicator.classList.remove('active');
+            this.resetBtn.disabled = this.elapsedTime === 0;
+            this.lapBtn.disabled = true;
+        }
     }
 
     update() {
@@ -801,31 +907,19 @@ class StopwatchModule {
     }
 
     formatTime(ms) {
-        const hours = Math.floor(ms / 3600000);
-        const minutes = Math.floor((ms % 3600000) / 60000);
+        const minutes = Math.floor(ms / 60000);
         const seconds = Math.floor((ms % 60000) / 1000);
-        const milliseconds = ms % 1000;
+        const centiseconds = Math.floor((ms % 1000) / 10);
 
-        const h = String(hours).padStart(2, '0');
-        const m = String(minutes).padStart(2, '0');
-        const s = String(seconds).padStart(2, '0');
-        const mil = String(milliseconds).padStart(3, '0');
-
-        return `${h}:${m}:${s}<span class="ms">.${mil}</span>`;
+        return `<span class="stopwatch-main">${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</span><span class="stopwatch-ms">.${String(centiseconds).padStart(2, '0')}</span>`;
     }
 
     formatTimeSimple(ms) {
-        const hours = Math.floor(ms / 3600000);
-        const minutes = Math.floor((ms % 3600000) / 60000);
+        const minutes = Math.floor(ms / 60000);
         const seconds = Math.floor((ms % 60000) / 1000);
-        const milliseconds = ms % 1000;
+        const centiseconds = Math.floor((ms % 1000) / 10);
 
-        const h = String(hours).padStart(2, '0');
-        const m = String(minutes).padStart(2, '0');
-        const s = String(seconds).padStart(2, '0');
-        const mil = String(milliseconds).padStart(3, '0');
-
-        return `${h}:${m}:${s}.${mil}`;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
     }
 
     addLap() {
@@ -835,22 +929,18 @@ class StopwatchModule {
         const previousLapTime = this.laps.length > 0 ? this.laps[this.laps.length - 1].totalTime : 0;
         const splitTime = lapTime - previousLapTime;
 
-        this.laps.push({
-            number: this.laps.length + 1,
-            splitTime,
-            totalTime: lapTime
-        });
-
+        this.laps.push({ number: this.laps.length + 1, splitTime, totalTime: lapTime });
         this.renderLaps();
     }
 
     renderLaps() {
         if (this.laps.length === 0) {
-            this.lapsList.innerHTML = '';
+            this.lapsContainer.style.display = 'none';
             return;
         }
 
-        // Find best and worst laps
+        this.lapsContainer.style.display = 'block';
+
         const splitTimes = this.laps.map(l => l.splitTime);
         const bestTime = Math.min(...splitTimes);
         const worstTime = Math.max(...splitTimes);
@@ -864,8 +954,9 @@ class StopwatchModule {
 
             return `
                 <div class="${className}">
-                    <span class="lap-number">Tour ${lap.number}</span>
-                    <span class="lap-time">${this.formatTimeSimple(lap.splitTime)}</span>
+                    <span class="lap-number">${lap.number}</span>
+                    <span class="lap-split">${this.formatTimeSimple(lap.splitTime)}</span>
+                    <span class="lap-total">${this.formatTimeSimple(lap.totalTime)}</span>
                 </div>
             `;
         }).join('');
@@ -880,6 +971,19 @@ class TimerModule {
         this.audioManager = audioManager;
         this.notificationManager = notificationManager;
 
+        this.initElements();
+        this.initEventListeners();
+
+        this.running = false;
+        this.paused = false;
+        this.totalSeconds = 0;
+        this.remainingSeconds = 0;
+        this.interval = null;
+        this.customSoundData = null;
+        this.initialDuration = '';
+    }
+
+    initElements() {
         this.setupContainer = document.getElementById('timer-setup');
         this.runningContainer = document.getElementById('timer-running');
         this.hoursInput = document.getElementById('timer-hours');
@@ -887,6 +991,7 @@ class TimerModule {
         this.secondsInput = document.getElementById('timer-seconds');
         this.startBtn = document.getElementById('timer-start-btn');
         this.display = document.getElementById('timer-display');
+        this.subtext = document.getElementById('timer-subtext');
         this.progressCircle = document.getElementById('timer-progress-circle');
         this.cancelBtn = document.getElementById('timer-cancel');
         this.pauseBtn = document.getElementById('timer-pause');
@@ -896,20 +1001,11 @@ class TimerModule {
         this.customSoundInput = document.getElementById('timer-custom-sound-input');
         this.customSoundName = document.getElementById('timer-custom-sound-name');
 
-        // Finished modal
         this.finishedModal = document.getElementById('timer-finished-modal');
         this.finishedDuration = document.getElementById('timer-finished-duration');
         this.dismissBtn = document.getElementById('timer-dismiss-btn');
-
-        this.running = false;
-        this.paused = false;
-        this.totalSeconds = 0;
-        this.remainingSeconds = 0;
-        this.interval = null;
-        this.customSoundData = null;
-        this.initialDuration = '';
-
-        this.initEventListeners();
+        this.stopSoundBtn = document.getElementById('timer-stop-sound-btn');
+        this.closeBtn = document.getElementById('timer-close-btn');
     }
 
     initEventListeners() {
@@ -917,96 +1013,49 @@ class TimerModule {
         this.cancelBtn.addEventListener('click', () => this.cancel());
         this.pauseBtn.addEventListener('click', () => this.togglePause());
 
-        // Dismiss button - use pointerup for unified touch/mouse support
-        const handleTimerDismiss = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Timer dismiss button pressed');
-            this.dismiss();
-        };
-        this.dismissBtn.addEventListener('pointerup', handleTimerDismiss);
-        this.dismissBtn.addEventListener('click', handleTimerDismiss);
+        const handleDismiss = (e) => { e.preventDefault(); this.dismiss(); };
+        const handleStopSound = (e) => { e.preventDefault(); this.audioManager.stopAll(); };
 
-        // Preset buttons
+        this.dismissBtn.addEventListener('click', handleDismiss);
+        this.stopSoundBtn.addEventListener('click', handleStopSound);
+        this.closeBtn.addEventListener('click', handleDismiss);
+
         this.presetBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                const minutes = parseInt(btn.dataset.minutes);
-                this.hoursInput.value = 0;
-                this.minutesInput.value = minutes;
-                this.secondsInput.value = 0;
+                const seconds = parseInt(btn.dataset.seconds);
+                this.hoursInput.value = Math.floor(seconds / 3600);
+                this.minutesInput.value = Math.floor((seconds % 3600) / 60);
+                this.secondsInput.value = seconds % 60;
             });
         });
 
-        // Sound selection
         this.soundSelect.addEventListener('change', () => {
-            this.customSoundGroup.style.display =
-                this.soundSelect.value === 'custom' ? 'block' : 'none';
+            this.customSoundGroup.style.display = this.soundSelect.value === 'custom' ? 'block' : 'none';
         });
 
-        // Custom sound upload
         this.customSoundInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
                 this.customSoundName.textContent = file.name;
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    this.customSoundData = ev.target.result;
-                };
+                reader.onload = (ev) => { this.customSoundData = ev.target.result; };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Input validation and keyboard support
         [this.hoursInput, this.minutesInput, this.secondsInput].forEach(input => {
-            input.addEventListener('input', () => this.validateTimerInput(input));
-            input.addEventListener('keydown', (e) => this.handleTimerKeydown(e));
+            input.addEventListener('input', () => this.validateInput(input));
             input.addEventListener('focus', (e) => e.target.select());
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (!document.getElementById('timer-tab').classList.contains('active')) return;
-            if (e.target.tagName === 'INPUT' && !this.running) return;
-
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault();
-                if (this.running) {
-                    this.togglePause();
-                } else if (!this.finishedModal.classList.contains('active')) {
-                    this.start();
-                }
-            } else if (e.key === 'Escape') {
-                if (this.finishedModal.classList.contains('active')) {
-                    this.dismiss();
-                } else if (this.running) {
-                    this.cancel();
-                }
-            }
         });
     }
 
-    validateTimerInput(input) {
+    validateInput(input) {
         let value = parseInt(input.value) || 0;
         const max = parseInt(input.max);
         const min = parseInt(input.min);
-
         if (value > max) value = max;
         if (value < min) value = min;
-
         input.value = value;
-    }
-
-    handleTimerKeydown(e) {
-        const input = e.target;
-        const value = parseInt(input.value) || 0;
-
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            input.value = value >= parseInt(input.max) ? parseInt(input.min) : value + 1;
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            input.value = value <= parseInt(input.min) ? parseInt(input.max) : value - 1;
-        }
     }
 
     start() {
@@ -1028,9 +1077,9 @@ class TimerModule {
 
         this.setupContainer.style.display = 'none';
         this.runningContainer.style.display = 'block';
-        this.pauseBtn.textContent = 'Pause';
-
+        this.updatePauseBtn();
         this.updateDisplay();
+
         this.interval = setInterval(() => this.tick(), 1000);
     }
 
@@ -1050,18 +1099,40 @@ class TimerModule {
         const minutes = Math.floor((this.remainingSeconds % 3600) / 60);
         const seconds = this.remainingSeconds % 60;
 
-        this.display.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        if (hours > 0) {
+            this.display.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        } else {
+            this.display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
-        // Update progress circle
+        this.subtext.textContent = this.paused ? 'En pause' : 'En cours...';
+
         const progress = this.remainingSeconds / this.totalSeconds;
-        const circumference = 2 * Math.PI * 45; // radius = 45
-        const offset = circumference * (1 - progress);
-        this.progressCircle.style.strokeDashoffset = offset;
+        const circumference = 2 * Math.PI * 45;
+        this.progressCircle.style.strokeDashoffset = circumference * (1 - progress);
     }
 
     togglePause() {
         this.paused = !this.paused;
-        this.pauseBtn.textContent = this.paused ? 'Reprendre' : 'Pause';
+        this.updatePauseBtn();
+        this.updateDisplay();
+    }
+
+    updatePauseBtn() {
+        const playIcon = this.pauseBtn.querySelector('.play-icon');
+        const pauseIcon = this.pauseBtn.querySelector('.pause-icon');
+
+        if (this.paused) {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            this.pauseBtn.classList.remove('pause-active');
+            this.pauseBtn.classList.add('play-btn');
+        } else {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            this.pauseBtn.classList.add('pause-active');
+            this.pauseBtn.classList.remove('play-btn');
+        }
     }
 
     cancel() {
@@ -1073,11 +1144,9 @@ class TimerModule {
     }
 
     finish() {
-        console.log('=== TIMER FINISHED ===');
         clearInterval(this.interval);
         this.running = false;
 
-        // Play sound
         const soundType = this.soundSelect.value;
         if (soundType === 'custom' && this.customSoundData) {
             this.audioManager.play('custom', this.customSoundData);
@@ -1085,20 +1154,13 @@ class TimerModule {
             this.audioManager.play(soundType);
         }
 
-        // Show notification
         this.notificationManager.show('Minuteur terminé !', {
             body: `Le minuteur de ${this.initialDuration} est écoulé`,
             tag: 'timer-finished'
         });
 
-        // Show finished modal - force display
         this.finishedDuration.textContent = this.initialDuration;
-        this.finishedModal.style.display = 'flex';
-        this.finishedModal.style.opacity = '1';
-        this.finishedModal.style.visibility = 'visible';
-        this.finishedModal.classList.add('active');
-
-        console.log('Timer modal should be visible:', this.finishedModal);
+        this.showModal(this.finishedModal);
     }
 
     formatDuration(totalSeconds) {
@@ -1115,23 +1177,388 @@ class TimerModule {
     }
 
     dismiss() {
-        console.log('=== TIMER DISMISS ===');
-
-        // Stop sound first
         this.audioManager.stopAll();
-
-        // Hide modal immediately
-        this.finishedModal.style.display = 'none';
-        this.finishedModal.style.opacity = '0';
-        this.finishedModal.style.visibility = 'hidden';
-        this.finishedModal.classList.remove('active');
-
-        // Reset UI
+        this.hideModal(this.finishedModal);
         this.setupContainer.style.display = 'block';
         this.runningContainer.style.display = 'none';
         this.progressCircle.style.strokeDashoffset = 0;
+    }
 
-        console.log('Timer dismissed, modal closed');
+    showModal(modal) {
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        modal.classList.add('active');
+    }
+
+    hideModal(modal) {
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        modal.classList.remove('active');
+    }
+}
+
+// ============================================
+// Rounds Module
+// ============================================
+class RoundsModule {
+    constructor(audioManager, notificationManager) {
+        this.audioManager = audioManager;
+        this.notificationManager = notificationManager;
+
+        this.config = StorageManager.load('roundsConfig', {
+            rounds: 3,
+            roundTime: 180,
+            restTime: 60,
+            prepareTime: 10
+        });
+
+        this.tempConfig = { ...this.config };
+        this.state = 'idle'; // idle, prepare, round, rest, finished
+        this.currentRound = 1;
+        this.remainingSeconds = 0;
+        this.totalPhaseSeconds = 0;
+        this.running = false;
+        this.paused = false;
+        this.interval = null;
+
+        this.initElements();
+        this.initEventListeners();
+        this.updateConfigDisplay();
+        this.updateDisplay();
+    }
+
+    initElements() {
+        this.currentRoundEl = document.getElementById('current-round');
+        this.totalRoundsEl = document.getElementById('total-rounds');
+        this.phaseEl = document.getElementById('rounds-phase');
+        this.timeEl = document.getElementById('rounds-time');
+        this.subtextEl = document.getElementById('rounds-subtext');
+        this.progressCircle = document.getElementById('rounds-progress-circle');
+
+        this.startBtn = document.getElementById('rounds-start');
+        this.resetBtn = document.getElementById('rounds-reset');
+        this.skipBtn = document.getElementById('rounds-skip');
+        this.settingsBtn = document.getElementById('rounds-settings-btn');
+
+        this.configRounds = document.getElementById('config-rounds');
+        this.configRoundTime = document.getElementById('config-round-time');
+        this.configRestTime = document.getElementById('config-rest-time');
+        this.configPrepare = document.getElementById('config-prepare');
+
+        this.settingsModal = document.getElementById('rounds-modal');
+        this.closeModalBtn = document.getElementById('close-rounds-modal');
+        this.applyBtn = document.getElementById('rounds-apply-btn');
+        this.presetBtns = document.querySelectorAll('.rounds-preset-btn');
+        this.configBtns = document.querySelectorAll('.config-btn');
+
+        this.modalRounds = document.getElementById('modal-rounds');
+        this.modalRoundTime = document.getElementById('modal-round-time');
+        this.modalRestTime = document.getElementById('modal-rest-time');
+        this.modalPrepare = document.getElementById('modal-prepare');
+
+        this.finishedModal = document.getElementById('rounds-finished-modal');
+        this.finishedText = document.getElementById('rounds-finished-text');
+        this.dismissBtn = document.getElementById('rounds-dismiss-btn');
+        this.stopSoundBtn = document.getElementById('rounds-stop-sound-btn');
+        this.closeFinishedBtn = document.getElementById('rounds-close-btn');
+    }
+
+    initEventListeners() {
+        this.startBtn.addEventListener('click', () => this.toggleStart());
+        this.resetBtn.addEventListener('click', () => this.reset());
+        this.skipBtn.addEventListener('click', () => this.skip());
+        this.settingsBtn.addEventListener('click', () => this.openSettings());
+        this.closeModalBtn.addEventListener('click', () => this.closeSettings());
+        this.applyBtn.addEventListener('click', () => this.applySettings());
+
+        this.settingsModal.addEventListener('click', (e) => {
+            if (e.target === this.settingsModal) this.closeSettings();
+        });
+
+        this.presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.applyPreset(btn.dataset.preset));
+        });
+
+        this.configBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.handleConfigBtn(btn.dataset.action));
+        });
+
+        const handleDismiss = (e) => { e.preventDefault(); this.dismissFinished(); };
+        const handleStopSound = (e) => { e.preventDefault(); this.audioManager.stopAll(); };
+
+        this.dismissBtn.addEventListener('click', handleDismiss);
+        this.stopSoundBtn.addEventListener('click', handleStopSound);
+        this.closeFinishedBtn.addEventListener('click', handleDismiss);
+    }
+
+    toggleStart() {
+        if (this.running) {
+            this.pause();
+        } else {
+            if (this.state === 'idle' || this.state === 'finished') {
+                this.startWorkout();
+            } else {
+                this.resume();
+            }
+        }
+    }
+
+    startWorkout() {
+        this.currentRound = 1;
+        this.state = 'prepare';
+        this.remainingSeconds = this.config.prepareTime;
+        this.totalPhaseSeconds = this.config.prepareTime;
+        this.running = true;
+        this.paused = false;
+
+        this.updateUI();
+        this.interval = setInterval(() => this.tick(), 1000);
+    }
+
+    pause() {
+        this.paused = true;
+        this.running = false;
+        this.updateUI();
+    }
+
+    resume() {
+        this.paused = false;
+        this.running = true;
+        this.updateUI();
+    }
+
+    reset() {
+        clearInterval(this.interval);
+        this.state = 'idle';
+        this.currentRound = 1;
+        this.remainingSeconds = this.config.prepareTime;
+        this.totalPhaseSeconds = this.config.prepareTime;
+        this.running = false;
+        this.paused = false;
+        this.updateUI();
+        this.updateDisplay();
+    }
+
+    skip() {
+        if (!this.running && !this.paused) return;
+        this.nextPhase();
+    }
+
+    tick() {
+        if (this.paused) return;
+
+        this.remainingSeconds--;
+
+        if (this.remainingSeconds <= 3 && this.remainingSeconds > 0) {
+            this.audioManager.playBeep(1, 800);
+        }
+
+        if (this.remainingSeconds <= 0) {
+            this.audioManager.playBeep(3, 1000);
+            this.nextPhase();
+        }
+
+        this.updateDisplay();
+    }
+
+    nextPhase() {
+        switch (this.state) {
+            case 'prepare':
+                this.state = 'round';
+                this.remainingSeconds = this.config.roundTime;
+                this.totalPhaseSeconds = this.config.roundTime;
+                break;
+            case 'round':
+                if (this.currentRound >= this.config.rounds) {
+                    this.finishWorkout();
+                    return;
+                }
+                this.state = 'rest';
+                this.remainingSeconds = this.config.restTime;
+                this.totalPhaseSeconds = this.config.restTime;
+                break;
+            case 'rest':
+                this.currentRound++;
+                this.state = 'round';
+                this.remainingSeconds = this.config.roundTime;
+                this.totalPhaseSeconds = this.config.roundTime;
+                break;
+        }
+        this.updateDisplay();
+    }
+
+    finishWorkout() {
+        clearInterval(this.interval);
+        this.state = 'finished';
+        this.running = false;
+
+        this.audioManager.play('energetic');
+        this.notificationManager.show('Entraînement terminé !', {
+            body: `Vous avez complété ${this.config.rounds} rounds !`,
+            tag: 'rounds-finished'
+        });
+
+        this.finishedText.textContent = `Vous avez complété ${this.config.rounds} rounds !`;
+        this.showModal(this.finishedModal);
+
+        this.updateUI();
+        this.updateDisplay();
+    }
+
+    dismissFinished() {
+        this.audioManager.stopAll();
+        this.hideModal(this.finishedModal);
+        this.reset();
+    }
+
+    updateUI() {
+        const playIcon = this.startBtn.querySelector('.play-icon');
+        const pauseIcon = this.startBtn.querySelector('.pause-icon');
+
+        if (this.running) {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            this.startBtn.classList.add('running');
+            this.skipBtn.disabled = false;
+        } else {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            this.startBtn.classList.remove('running');
+            this.skipBtn.disabled = this.state === 'idle' || this.state === 'finished';
+        }
+    }
+
+    updateDisplay() {
+        this.currentRoundEl.textContent = this.currentRound;
+        this.totalRoundsEl.textContent = this.config.rounds;
+
+        const minutes = Math.floor(this.remainingSeconds / 60);
+        const seconds = this.remainingSeconds % 60;
+        this.timeEl.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+        const phaseNames = {
+            idle: 'PRÉPARATION',
+            prepare: 'PRÉPARATION',
+            round: 'ROUND',
+            rest: 'REPOS',
+            finished: 'TERMINÉ'
+        };
+
+        const subtexts = {
+            idle: 'Préparez-vous...',
+            prepare: 'Préparez-vous...',
+            round: 'Donnez tout !',
+            rest: 'Récupérez...',
+            finished: 'Félicitations !'
+        };
+
+        this.phaseEl.textContent = phaseNames[this.state];
+        this.phaseEl.className = `rounds-phase ${this.state}`;
+        this.subtextEl.textContent = this.paused ? 'En pause' : subtexts[this.state];
+
+        // Progress circle
+        this.progressCircle.className = `rounds-fg-circle ${this.state}`;
+        const progress = this.totalPhaseSeconds > 0 ? this.remainingSeconds / this.totalPhaseSeconds : 1;
+        const circumference = 2 * Math.PI * 45;
+        this.progressCircle.style.strokeDashoffset = circumference * (1 - progress);
+    }
+
+    updateConfigDisplay() {
+        this.configRounds.textContent = this.config.rounds;
+        this.configRoundTime.textContent = this.formatTimeShort(this.config.roundTime);
+        this.configRestTime.textContent = this.formatTimeShort(this.config.restTime);
+        this.configPrepare.textContent = `${this.config.prepareTime}s`;
+    }
+
+    formatTimeShort(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return s === 0 ? `${m}:00` : `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    openSettings() {
+        this.tempConfig = { ...this.config };
+        this.updateModalValues();
+        this.settingsModal.classList.add('active');
+    }
+
+    closeSettings() {
+        this.settingsModal.classList.remove('active');
+    }
+
+    updateModalValues() {
+        this.modalRounds.textContent = this.tempConfig.rounds;
+        this.modalRoundTime.textContent = this.formatTimeShort(this.tempConfig.roundTime);
+        this.modalRestTime.textContent = this.formatTimeShort(this.tempConfig.restTime);
+        this.modalPrepare.textContent = `${this.tempConfig.prepareTime}s`;
+    }
+
+    applyPreset(preset) {
+        const presets = {
+            boxe: { rounds: 3, roundTime: 180, restTime: 60, prepareTime: 10 },
+            hiit: { rounds: 8, roundTime: 30, restTime: 10, prepareTime: 10 },
+            tabata: { rounds: 8, roundTime: 20, restTime: 10, prepareTime: 10 },
+            combat: { rounds: 5, roundTime: 300, restTime: 60, prepareTime: 10 }
+        };
+
+        if (presets[preset]) {
+            this.tempConfig = { ...presets[preset] };
+            this.updateModalValues();
+        }
+    }
+
+    handleConfigBtn(action) {
+        switch (action) {
+            case 'rounds-minus':
+                if (this.tempConfig.rounds > 1) this.tempConfig.rounds--;
+                break;
+            case 'rounds-plus':
+                if (this.tempConfig.rounds < 99) this.tempConfig.rounds++;
+                break;
+            case 'round-minus':
+                if (this.tempConfig.roundTime > 10) this.tempConfig.roundTime -= 10;
+                break;
+            case 'round-plus':
+                if (this.tempConfig.roundTime < 3600) this.tempConfig.roundTime += 10;
+                break;
+            case 'rest-minus':
+                if (this.tempConfig.restTime > 5) this.tempConfig.restTime -= 5;
+                break;
+            case 'rest-plus':
+                if (this.tempConfig.restTime < 600) this.tempConfig.restTime += 5;
+                break;
+            case 'prepare-minus':
+                if (this.tempConfig.prepareTime > 1) this.tempConfig.prepareTime--;
+                break;
+            case 'prepare-plus':
+                if (this.tempConfig.prepareTime < 60) this.tempConfig.prepareTime++;
+                break;
+        }
+        this.updateModalValues();
+    }
+
+    applySettings() {
+        this.config = { ...this.tempConfig };
+        StorageManager.save('roundsConfig', this.config);
+        this.updateConfigDisplay();
+        this.reset();
+        this.closeSettings();
+    }
+
+    showModal(modal) {
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        modal.classList.add('active');
+    }
+
+    hideModal(modal) {
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+        modal.classList.remove('active');
     }
 }
 
@@ -1142,7 +1569,6 @@ class TabNavigation {
     constructor() {
         this.navBtns = document.querySelectorAll('.nav-btn');
         this.tabContents = document.querySelectorAll('.tab-content');
-
         this.initEventListeners();
     }
 
@@ -1151,24 +1577,20 @@ class TabNavigation {
             btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
         });
 
-        // Keyboard navigation
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
-
             if (e.key === '1') this.switchTab('clock');
             else if (e.key === '2') this.switchTab('alarm');
             else if (e.key === '3') this.switchTab('stopwatch');
             else if (e.key === '4') this.switchTab('timer');
+            else if (e.key === '5') this.switchTab('rounds');
         });
     }
 
     switchTab(tabName) {
-        // Update nav buttons
         this.navBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabName);
         });
-
-        // Update tab content
         this.tabContents.forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}-tab`);
         });
@@ -1187,18 +1609,17 @@ class App {
         this.alarm = new AlarmModule(this.audioManager, this.notificationManager);
         this.stopwatch = new StopwatchModule();
         this.timer = new TimerModule(this.audioManager, this.notificationManager);
+        this.rounds = new RoundsModule(this.audioManager, this.notificationManager);
         this.navigation = new TabNavigation();
 
-        // Request notification permission on first interaction
         document.addEventListener('click', () => {
             this.notificationManager.requestPermission();
         }, { once: true });
 
-        console.log('Alarm Clock App initialized');
+        console.log('Alarm Clock App initialized with all features');
     }
 }
 
-// Initialize app when DOM is ready
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new App();
