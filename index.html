@@ -904,6 +904,81 @@
     <audio id="audio-default" preload="auto"></audio>
     <audio id="audio-custom" preload="auto"></audio>
 
+    <!-- Voice Recognition Floating Button -->
+    <div class="voice-fab" id="voice-fab">
+        <div class="voice-fab-btn" id="voice-fab-btn">
+            <svg class="voice-icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <div class="voice-pulse"></div>
+            <div class="voice-pulse delay"></div>
+        </div>
+    </div>
+
+    <!-- Voice Recognition Modal -->
+    <div class="modal voice-modal" id="voice-modal">
+        <div class="modal-content voice-modal-content">
+            <button class="modal-close-btn" id="voice-close-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="voice-listening-container">
+                <div class="voice-listening-icon" id="voice-listening-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
+                        <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <div class="voice-wave"></div>
+                    <div class="voice-wave delay1"></div>
+                    <div class="voice-wave delay2"></div>
+                </div>
+                <div class="voice-status" id="voice-status">Parlez maintenant...</div>
+                <div class="voice-transcript" id="voice-transcript"></div>
+            </div>
+
+            <div class="voice-result-container" id="voice-result-container" style="display: none;">
+                <div class="voice-result-icon">✓</div>
+                <div class="voice-result-title" id="voice-result-title">Alarme créée</div>
+                <div class="voice-result-details" id="voice-result-details"></div>
+                <div class="voice-result-category" id="voice-result-category"></div>
+            </div>
+
+            <div class="voice-error-container" id="voice-error-container" style="display: none;">
+                <div class="voice-error-icon">⚠️</div>
+                <div class="voice-error-text" id="voice-error-text">Non reconnu</div>
+            </div>
+
+            <div class="voice-help">
+                <div class="voice-help-title">Exemples de commandes :</div>
+                <div class="voice-help-examples">
+                    <span>"Dentiste mardi 15h"</span>
+                    <span>"Réunion demain 9h"</span>
+                    <span>"Sport lundi 18h30"</span>
+                    <span>"Réveil 7h"</span>
+                </div>
+            </div>
+
+            <div class="voice-actions">
+                <button class="voice-action-btn retry-btn" id="voice-retry-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Réessayer
+                </button>
+                <button class="voice-action-btn cancel-btn" id="voice-cancel-btn">Annuler</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

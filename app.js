@@ -1718,6 +1718,524 @@ class RoundsModule {
 }
 
 // ============================================
+// Voice Recognition Module (No AI - Keywords based)
+// ============================================
+class VoiceRecognitionModule {
+    constructor(alarmModule) {
+        this.alarmModule = alarmModule;
+        this.recognition = null;
+        this.isListening = false;
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.fabStartX = 0;
+        this.fabStartY = 0;
+
+        // Categories with keywords
+        this.categories = {
+            sante: {
+                name: 'Santé',
+                keywords: ['dentiste', 'médecin', 'docteur', 'hôpital', 'clinique', 'pharmacie', 'kiné', 'ostéo', 'psy', 'ophtalmo', 'dermato', 'cardio', 'vaccin', 'radio', 'scanner', 'irm', 'analyse', 'sang', 'ordonnance', 'rendez-vous médical']
+            },
+            travail: {
+                name: 'Travail',
+                keywords: ['réunion', 'meeting', 'bureau', 'travail', 'boulot', 'projet', 'deadline', 'client', 'patron', 'boss', 'collègue', 'présentation', 'conférence', 'call', 'appel', 'zoom', 'teams', 'entretien', 'interview', 'formation']
+            },
+            sport: {
+                name: 'Sport',
+                keywords: ['sport', 'gym', 'musculation', 'fitness', 'course', 'running', 'jogging', 'vélo', 'natation', 'piscine', 'tennis', 'foot', 'football', 'basket', 'yoga', 'boxe', 'entraînement', 'match', 'coach', 'salle']
+            },
+            personnel: {
+                name: 'Personnel',
+                keywords: ['réveil', 'rappel', 'alarme', 'perso', 'personnel', 'moi', 'important', 'noter', 'penser', 'oublier', 'médicament', 'pilule', 'sieste', 'dormir', 'coucher', 'lever']
+            },
+            courses: {
+                name: 'Courses',
+                keywords: ['courses', 'supermarché', 'magasin', 'shopping', 'acheter', 'commander', 'livraison', 'colis', 'marché', 'boulangerie', 'épicerie', 'carrefour', 'leclerc', 'auchan', 'lidl']
+            },
+            transport: {
+                name: 'Transport',
+                keywords: ['train', 'avion', 'bus', 'métro', 'tram', 'taxi', 'uber', 'voiture', 'gare', 'aéroport', 'vol', 'départ', 'arrivée', 'voyage', 'trajet', 'covoiturage', 'blablacar', 'essence', 'garage', 'contrôle technique']
+            },
+            education: {
+                name: 'Éducation',
+                keywords: ['cours', 'école', 'université', 'fac', 'examen', 'partiel', 'révision', 'devoir', 'td', 'tp', 'prof', 'professeur', 'étudier', 'bibliothèque', 'exposé', 'mémoire', 'thèse', 'soutenance']
+            },
+            loisirs: {
+                name: 'Loisirs',
+                keywords: ['cinéma', 'film', 'concert', 'spectacle', 'théâtre', 'expo', 'musée', 'resto', 'restaurant', 'bar', 'soirée', 'fête', 'anniversaire', 'sortie', 'bowling', 'karaoké', 'jeu', 'gaming']
+            },
+            famille: {
+                name: 'Famille',
+                keywords: ['famille', 'enfant', 'bébé', 'fils', 'fille', 'parent', 'mère', 'père', 'maman', 'papa', 'grand-père', 'grand-mère', 'frère', 'sœur', 'cousin', 'nièce', 'neveu', 'crèche', 'nounou', 'école']
+            },
+            finance: {
+                name: 'Finance',
+                keywords: ['banque', 'virement', 'facture', 'loyer', 'impôt', 'taxe', 'assurance', 'mutuelle', 'crédit', 'prêt', 'épargne', 'comptable', 'notaire', 'avocat', 'paiement', 'salaire']
+            }
+        };
+
+        // Day keywords
+        this.dayKeywords = {
+            'lundi': 1, 'mardi': 2, 'mercredi': 3, 'jeudi': 4, 'vendredi': 5, 'samedi': 6, 'dimanche': 0,
+            'demain': 'tomorrow', 'après-demain': 'afterTomorrow', 'aujourd\'hui': 'today', "aujourd'hui": 'today'
+        };
+
+        this.initElements();
+        this.initSpeechRecognition();
+        this.initEventListeners();
+        this.initDraggable();
+
+        // Restore position from storage
+        this.restorePosition();
+    }
+
+    initElements() {
+        this.voiceFab = document.getElementById('voice-fab');
+        this.voiceFabBtn = document.getElementById('voice-fab-btn');
+        this.voiceModal = document.getElementById('voice-modal');
+        this.voiceCloseBtn = document.getElementById('voice-close-btn');
+        this.voiceStatus = document.getElementById('voice-status');
+        this.voiceTranscript = document.getElementById('voice-transcript');
+        this.voiceListeningContainer = document.querySelector('.voice-listening-container');
+        this.voiceResultContainer = document.getElementById('voice-result-container');
+        this.voiceResultTitle = document.getElementById('voice-result-title');
+        this.voiceResultDetails = document.getElementById('voice-result-details');
+        this.voiceResultCategory = document.getElementById('voice-result-category');
+        this.voiceErrorContainer = document.getElementById('voice-error-container');
+        this.voiceErrorText = document.getElementById('voice-error-text');
+        this.voiceRetryBtn = document.getElementById('voice-retry-btn');
+        this.voiceCancelBtn = document.getElementById('voice-cancel-btn');
+    }
+
+    initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            console.warn('Web Speech API not supported');
+            if (this.voiceFab) {
+                this.voiceFab.style.display = 'none';
+            }
+            return;
+        }
+
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = 'fr-FR';
+        this.recognition.continuous = false;
+        this.recognition.interimResults = true;
+        this.recognition.maxAlternatives = 1;
+
+        this.recognition.onstart = () => {
+            this.isListening = true;
+            this.voiceFab.classList.add('listening');
+            this.showListening();
+        };
+
+        this.recognition.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+
+            this.voiceTranscript.textContent = finalTranscript || interimTranscript;
+
+            if (finalTranscript) {
+                this.processTranscript(finalTranscript);
+            }
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            this.isListening = false;
+            this.voiceFab.classList.remove('listening');
+
+            let errorMessage = 'Erreur de reconnaissance';
+            switch (event.error) {
+                case 'no-speech':
+                    errorMessage = 'Aucune parole détectée';
+                    break;
+                case 'audio-capture':
+                    errorMessage = 'Microphone non disponible';
+                    break;
+                case 'not-allowed':
+                    errorMessage = 'Microphone non autorisé';
+                    break;
+                case 'network':
+                    errorMessage = 'Erreur réseau';
+                    break;
+            }
+            this.showError(errorMessage);
+        };
+
+        this.recognition.onend = () => {
+            this.isListening = false;
+            this.voiceFab.classList.remove('listening');
+        };
+    }
+
+    initEventListeners() {
+        if (this.voiceFabBtn) {
+            this.voiceFabBtn.addEventListener('click', (e) => {
+                if (!this.isDragging) {
+                    this.startListening();
+                }
+            });
+        }
+
+        if (this.voiceCloseBtn) {
+            this.voiceCloseBtn.addEventListener('click', () => this.closeModal());
+        }
+
+        if (this.voiceRetryBtn) {
+            this.voiceRetryBtn.addEventListener('click', () => this.startListening());
+        }
+
+        if (this.voiceCancelBtn) {
+            this.voiceCancelBtn.addEventListener('click', () => this.closeModal());
+        }
+
+        if (this.voiceModal) {
+            this.voiceModal.addEventListener('click', (e) => {
+                if (e.target === this.voiceModal) {
+                    this.closeModal();
+                }
+            });
+        }
+    }
+
+    initDraggable() {
+        if (!this.voiceFab) return;
+
+        let dragThreshold = 5;
+        let moved = false;
+
+        const onStart = (e) => {
+            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+            this.dragStartX = clientX;
+            this.dragStartY = clientY;
+
+            const rect = this.voiceFab.getBoundingClientRect();
+            this.fabStartX = rect.left;
+            this.fabStartY = rect.top;
+
+            moved = false;
+            this.isDragging = false;
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+        };
+
+        const onMove = (e) => {
+            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+
+            const deltaX = Math.abs(clientX - this.dragStartX);
+            const deltaY = Math.abs(clientY - this.dragStartY);
+
+            if (deltaX > dragThreshold || deltaY > dragThreshold) {
+                moved = true;
+                this.isDragging = true;
+                this.voiceFab.classList.add('dragging');
+
+                if (e.type === 'touchmove') {
+                    e.preventDefault();
+                }
+
+                const newX = this.fabStartX + (clientX - this.dragStartX);
+                const newY = this.fabStartY + (clientY - this.dragStartY);
+
+                // Keep within viewport
+                const maxX = window.innerWidth - this.voiceFab.offsetWidth;
+                const maxY = window.innerHeight - this.voiceFab.offsetHeight;
+
+                const boundedX = Math.max(0, Math.min(newX, maxX));
+                const boundedY = Math.max(0, Math.min(newY, maxY));
+
+                this.voiceFab.style.left = boundedX + 'px';
+                this.voiceFab.style.top = boundedY + 'px';
+                this.voiceFab.style.right = 'auto';
+                this.voiceFab.style.bottom = 'auto';
+            }
+        };
+
+        const onEnd = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+
+            this.voiceFab.classList.remove('dragging');
+
+            if (moved) {
+                // Save position
+                this.savePosition();
+                // Prevent click from firing
+                setTimeout(() => {
+                    this.isDragging = false;
+                }, 100);
+            }
+        };
+
+        this.voiceFab.addEventListener('mousedown', onStart);
+        this.voiceFab.addEventListener('touchstart', onStart, { passive: true });
+    }
+
+    savePosition() {
+        const rect = this.voiceFab.getBoundingClientRect();
+        StorageManager.save('voiceFabPosition', {
+            left: rect.left,
+            top: rect.top
+        });
+    }
+
+    restorePosition() {
+        const position = StorageManager.load('voiceFabPosition');
+        if (position && this.voiceFab) {
+            // Validate position is still within viewport
+            const maxX = window.innerWidth - 56;
+            const maxY = window.innerHeight - 56;
+
+            const boundedX = Math.max(0, Math.min(position.left, maxX));
+            const boundedY = Math.max(0, Math.min(position.top, maxY));
+
+            this.voiceFab.style.left = boundedX + 'px';
+            this.voiceFab.style.top = boundedY + 'px';
+            this.voiceFab.style.right = 'auto';
+            this.voiceFab.style.bottom = 'auto';
+        }
+    }
+
+    startListening() {
+        if (!this.recognition) {
+            alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Utilisez Chrome ou Edge.');
+            return;
+        }
+
+        this.showModal();
+        this.showListening();
+        this.voiceTranscript.textContent = '';
+
+        try {
+            this.recognition.start();
+        } catch (e) {
+            console.error('Error starting recognition:', e);
+        }
+    }
+
+    stopListening() {
+        if (this.recognition && this.isListening) {
+            this.recognition.stop();
+        }
+    }
+
+    showModal() {
+        this.voiceModal.classList.add('active');
+    }
+
+    closeModal() {
+        this.voiceModal.classList.remove('active');
+        this.stopListening();
+    }
+
+    showListening() {
+        this.voiceListeningContainer.style.display = 'block';
+        this.voiceResultContainer.style.display = 'none';
+        this.voiceErrorContainer.style.display = 'none';
+        this.voiceStatus.textContent = 'Parlez maintenant...';
+    }
+
+    showResult(alarm, category) {
+        this.voiceListeningContainer.style.display = 'none';
+        this.voiceResultContainer.style.display = 'block';
+        this.voiceErrorContainer.style.display = 'none';
+
+        const timeStr = `${String(alarm.hours).padStart(2, '0')}:${String(alarm.minutes).padStart(2, '0')}`;
+        this.voiceResultTitle.textContent = 'Alarme créée !';
+        this.voiceResultDetails.textContent = `${alarm.label} à ${timeStr}`;
+        this.voiceResultCategory.textContent = category.name;
+        this.voiceResultCategory.className = `voice-result-category ${category.key}`;
+
+        // Auto close after 3 seconds
+        setTimeout(() => {
+            this.closeModal();
+        }, 3000);
+    }
+
+    showError(message) {
+        this.voiceListeningContainer.style.display = 'none';
+        this.voiceResultContainer.style.display = 'none';
+        this.voiceErrorContainer.style.display = 'block';
+        this.voiceErrorText.textContent = message;
+    }
+
+    processTranscript(text) {
+        const lowerText = text.toLowerCase().trim();
+        console.log('Processing transcript:', lowerText);
+
+        // Parse time
+        const time = this.parseTime(lowerText);
+        if (!time) {
+            this.showError('Heure non reconnue. Dites par exemple "15h" ou "8 heures 30"');
+            return;
+        }
+
+        // Parse date/day
+        const date = this.parseDate(lowerText);
+
+        // Detect category
+        const category = this.detectCategory(lowerText);
+
+        // Create label from text (remove time patterns)
+        let label = this.extractLabel(lowerText);
+        if (!label) {
+            label = category.name;
+        }
+
+        // Create the alarm
+        const alarm = {
+            id: Date.now().toString(),
+            hours: time.hours,
+            minutes: time.minutes,
+            label: label.charAt(0).toUpperCase() + label.slice(1),
+            sound: 'default',
+            days: date.days,
+            customSoundData: null,
+            customSoundName: '',
+            enabled: true,
+            lastTriggered: null
+        };
+
+        // Add to alarm module
+        this.alarmModule.alarms.push(alarm);
+        this.alarmModule.saveAlarms();
+        this.alarmModule.renderAlarms();
+
+        this.showResult(alarm, category);
+    }
+
+    parseTime(text) {
+        // Patterns for time recognition
+        const patterns = [
+            /(\d{1,2})\s*h(?:eures?)?\s*(\d{1,2})?/i,  // 15h, 15h30, 15 heures 30
+            /(\d{1,2})\s*:\s*(\d{2})/,                  // 15:30
+            /(\d{1,2})\s+heures?\s*(\d{1,2})?/i,        // 15 heures, 15 heures 30
+            /à\s+(\d{1,2})\s*h?(?:eures?)?\s*(\d{1,2})?/i  // à 15h, à 15h30
+        ];
+
+        for (const pattern of patterns) {
+            const match = text.match(pattern);
+            if (match) {
+                let hours = parseInt(match[1]);
+                let minutes = match[2] ? parseInt(match[2]) : 0;
+
+                // Handle edge cases
+                if (hours < 0 || hours > 23) continue;
+                if (minutes < 0 || minutes > 59) continue;
+
+                return { hours, minutes };
+            }
+        }
+
+        // Special times
+        if (text.includes('midi')) {
+            return { hours: 12, minutes: 0 };
+        }
+        if (text.includes('minuit')) {
+            return { hours: 0, minutes: 0 };
+        }
+
+        return null;
+    }
+
+    parseDate(text) {
+        const today = new Date();
+        let days = [];
+
+        // Check for specific days
+        for (const [keyword, dayValue] of Object.entries(this.dayKeywords)) {
+            if (text.includes(keyword)) {
+                if (dayValue === 'tomorrow') {
+                    // Don't set days for one-time alarms
+                    return { days: [], targetDate: 'tomorrow' };
+                } else if (dayValue === 'afterTomorrow') {
+                    return { days: [], targetDate: 'afterTomorrow' };
+                } else if (dayValue === 'today') {
+                    return { days: [], targetDate: 'today' };
+                } else {
+                    days.push(dayValue);
+                }
+            }
+        }
+
+        // Check for "tous les jours" or "chaque jour"
+        if (text.includes('tous les jours') || text.includes('chaque jour')) {
+            days = [0, 1, 2, 3, 4, 5, 6];
+        }
+
+        // Check for "en semaine"
+        if (text.includes('en semaine') || text.includes('semaine')) {
+            days = [1, 2, 3, 4, 5];
+        }
+
+        // Check for "week-end" or "weekend"
+        if (text.includes('week-end') || text.includes('weekend')) {
+            days = [0, 6];
+        }
+
+        return { days };
+    }
+
+    detectCategory(text) {
+        for (const [key, category] of Object.entries(this.categories)) {
+            for (const keyword of category.keywords) {
+                if (text.includes(keyword)) {
+                    return { key, name: category.name };
+                }
+            }
+        }
+        return { key: 'default', name: 'Rappel' };
+    }
+
+    extractLabel(text) {
+        // Remove time patterns
+        let label = text
+            .replace(/\d{1,2}\s*h(?:eures?)?\s*\d{0,2}/gi, '')
+            .replace(/\d{1,2}\s*:\s*\d{2}/gi, '')
+            .replace(/à\s+\d{1,2}/gi, '')
+            .replace(/midi/gi, '')
+            .replace(/minuit/gi, '');
+
+        // Remove day keywords
+        for (const keyword of Object.keys(this.dayKeywords)) {
+            label = label.replace(new RegExp(keyword, 'gi'), '');
+        }
+
+        // Remove common words
+        label = label
+            .replace(/tous les jours/gi, '')
+            .replace(/chaque jour/gi, '')
+            .replace(/en semaine/gi, '')
+            .replace(/week-end/gi, '')
+            .replace(/weekend/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return label;
+    }
+}
+
+// ============================================
 // Tab Navigation
 // ============================================
 class TabNavigation {
@@ -1766,12 +2284,13 @@ class App {
         this.timer = new TimerModule(this.audioManager, this.notificationManager);
         this.rounds = new RoundsModule(this.audioManager, this.notificationManager);
         this.navigation = new TabNavigation();
+        this.voice = new VoiceRecognitionModule(this.alarm);
 
         document.addEventListener('click', () => {
             this.notificationManager.requestPermission();
         }, { once: true });
 
-        console.log('Alarm Clock App initialized with all features');
+        console.log('Alarm Clock App initialized with all features including voice recognition');
     }
 }
 
