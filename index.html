@@ -48,6 +48,13 @@
                 </svg>
                 <span>Rounds</span>
             </button>
+            <button class="nav-btn" data-tab="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Param.</span>
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -538,6 +545,200 @@
                         <div class="rounds-config-item">
                             <span class="config-value" id="config-prepare">10s</span>
                             <span class="config-label">Préparation</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="settings-tab" class="tab-content">
+                <!-- Neumorphic Settings Header -->
+                <div class="neu-settings-header">
+                    <div class="neu-header-content">
+                        <button class="neu-back-btn" id="settings-back-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="neu-title">Paramètres</h2>
+                        <button class="neu-gear-btn" id="settings-gear-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dark Mode Card with 3D Effect -->
+                <div class="neu-card-3d">
+                    <div class="neu-card-inner">
+                        <div class="theme-icons">
+                            <div class="sun-icon" id="sun-icon">
+                                <svg viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                                    <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                        <line x1="12" y1="1" x2="12" y2="3"/>
+                                        <line x1="12" y1="21" x2="12" y2="23"/>
+                                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                        <line x1="1" y1="12" x2="3" y2="12"/>
+                                        <line x1="21" y1="12" x2="23" y2="12"/>
+                                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div class="neu-toggle-3d" id="dark-mode-toggle">
+                                <div class="neu-toggle-track">
+                                    <div class="neu-toggle-thumb">
+                                        <svg class="moon-thumb-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="moon-icon" id="moon-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="theme-buttons">
+                            <button class="neu-pill-btn dark-mode-btn active" data-theme="dark">
+                                Dark Mode
+                            </button>
+                            <div class="neu-mini-toggle" id="theme-mini-toggle">
+                                <div class="neu-mini-thumb"></div>
+                            </div>
+                            <button class="neu-pill-btn off-btn" data-theme="light">
+                                OFF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Style Category Pills -->
+                <div class="neu-dashboard-card">
+                    <div class="neu-dashboard-header">
+                        <span class="neu-dashboard-title">Catégories d'alarmes</span>
+                        <div class="neu-nav-pills">
+                            <span class="neu-nav-item active">Vue</span>
+                            <span class="neu-nav-item">Stats</span>
+                            <span class="neu-nav-item">Sons</span>
+                            <svg class="neu-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="neu-category-pills">
+                        <button class="neu-category-pill cyan">
+                            <span>Santé</span>
+                        </button>
+                        <button class="neu-category-pill purple">
+                            <span>Travail</span>
+                        </button>
+                        <button class="neu-category-pill coral">
+                            <span>Sport</span>
+                        </button>
+                        <button class="neu-category-pill pink">
+                            <span>Perso</span>
+                        </button>
+                    </div>
+
+                    <!-- Progress/Stats Cards -->
+                    <div class="neu-stats-grid">
+                        <div class="neu-stat-card">
+                            <div class="neu-stat-header">
+                                <span class="neu-stat-label">Alarmes actives</span>
+                                <span class="neu-stat-value" id="settings-alarm-count">0</span>
+                            </div>
+                            <div class="neu-progress-container">
+                                <div class="neu-progress-track">
+                                    <div class="neu-progress-fill cyan" id="alarm-progress" style="width: 0%"></div>
+                                    <div class="neu-progress-glow cyan"></div>
+                                </div>
+                            </div>
+                            <div class="neu-stat-footer">
+                                <span>Quotidien</span>
+                                <span>Hebdo</span>
+                            </div>
+                        </div>
+                        <div class="neu-stat-card">
+                            <div class="neu-stat-header">
+                                <span class="neu-stat-label">Rounds complétés</span>
+                                <span class="neu-stat-value" id="settings-rounds-count">0</span>
+                            </div>
+                            <div class="neu-progress-container">
+                                <div class="neu-progress-track">
+                                    <div class="neu-progress-fill gradient" id="rounds-progress" style="width: 0%"></div>
+                                    <div class="neu-progress-glow gradient"></div>
+                                </div>
+                            </div>
+                            <div class="neu-stat-footer">
+                                <span>Cette semaine</span>
+                                <span>Total</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sound Settings Card -->
+                <div class="neu-card-3d">
+                    <div class="neu-card-inner">
+                        <h3 class="neu-section-title">Sons & Notifications</h3>
+
+                        <div class="neu-slider-row">
+                            <span class="neu-slider-label">Volume alarme</span>
+                            <div class="neu-slider-container">
+                                <input type="range" class="neu-slider" id="alarm-volume" min="0" max="100" value="80">
+                                <div class="neu-slider-track">
+                                    <div class="neu-slider-fill" id="alarm-volume-fill"></div>
+                                    <div class="neu-slider-thumb" id="alarm-volume-thumb"></div>
+                                </div>
+                            </div>
+                            <span class="neu-slider-value" id="alarm-volume-value">80%</span>
+                        </div>
+
+                        <div class="neu-slider-row">
+                            <span class="neu-slider-label">Volume timer</span>
+                            <div class="neu-slider-container">
+                                <input type="range" class="neu-slider" id="timer-volume" min="0" max="100" value="70">
+                                <div class="neu-slider-track">
+                                    <div class="neu-slider-fill purple" id="timer-volume-fill"></div>
+                                    <div class="neu-slider-thumb purple" id="timer-volume-thumb"></div>
+                                </div>
+                            </div>
+                            <span class="neu-slider-value" id="timer-volume-value">70%</span>
+                        </div>
+
+                        <div class="neu-toggle-row">
+                            <span class="neu-toggle-label">Vibration</span>
+                            <div class="neu-switch" id="vibration-switch">
+                                <div class="neu-switch-track">
+                                    <div class="neu-switch-thumb"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="neu-toggle-row">
+                            <span class="neu-toggle-label">Notifications système</span>
+                            <div class="neu-switch active" id="notification-switch">
+                                <div class="neu-switch-track">
+                                    <div class="neu-switch-thumb"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Card -->
+                <div class="neu-card-3d small">
+                    <div class="neu-card-inner">
+                        <div class="neu-about">
+                            <span class="neu-app-name">Alarm Clock Pro</span>
+                            <span class="neu-version">Version 2.0</span>
                         </div>
                     </div>
                 </div>

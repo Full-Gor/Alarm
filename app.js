@@ -2271,6 +2271,252 @@ class TabNavigation {
 }
 
 // ============================================
+// Settings Module with Neumorphic UI
+// ============================================
+class SettingsModule {
+    constructor(alarmModule, audioManager) {
+        this.alarmModule = alarmModule;
+        this.audioManager = audioManager;
+        this.isDarkMode = StorageManager.load('darkMode', true);
+        this.settings = StorageManager.load('appSettings', {
+            alarmVolume: 80,
+            timerVolume: 70,
+            vibration: false,
+            notifications: true
+        });
+
+        this.initElements();
+        this.initEventListeners();
+        this.applyTheme();
+        this.updateSliders();
+        this.updateStats();
+
+        // Update stats periodically
+        setInterval(() => this.updateStats(), 5000);
+    }
+
+    initElements() {
+        // Theme controls
+        this.darkModeToggle = document.getElementById('dark-mode-toggle');
+        this.themeMiniToggle = document.getElementById('theme-mini-toggle');
+        this.darkModeBtn = document.querySelector('.dark-mode-btn');
+        this.offBtn = document.querySelector('.off-btn');
+        this.sunIcon = document.getElementById('sun-icon');
+        this.moonIcon = document.getElementById('moon-icon');
+
+        // Volume sliders
+        this.alarmVolumeSlider = document.getElementById('alarm-volume');
+        this.alarmVolumeFill = document.getElementById('alarm-volume-fill');
+        this.alarmVolumeThumb = document.getElementById('alarm-volume-thumb');
+        this.alarmVolumeValue = document.getElementById('alarm-volume-value');
+
+        this.timerVolumeSlider = document.getElementById('timer-volume');
+        this.timerVolumeFill = document.getElementById('timer-volume-fill');
+        this.timerVolumeThumb = document.getElementById('timer-volume-thumb');
+        this.timerVolumeValue = document.getElementById('timer-volume-value');
+
+        // Switches
+        this.vibrationSwitch = document.getElementById('vibration-switch');
+        this.notificationSwitch = document.getElementById('notification-switch');
+
+        // Stats
+        this.alarmCountEl = document.getElementById('settings-alarm-count');
+        this.alarmProgressEl = document.getElementById('alarm-progress');
+        this.roundsCountEl = document.getElementById('settings-rounds-count');
+        this.roundsProgressEl = document.getElementById('rounds-progress');
+
+        // Navigation buttons
+        this.backBtn = document.getElementById('settings-back-btn');
+        this.gearBtn = document.getElementById('settings-gear-btn');
+
+        // Nav items
+        this.navItems = document.querySelectorAll('.neu-nav-item');
+    }
+
+    initEventListeners() {
+        // Dark mode toggle
+        if (this.darkModeToggle) {
+            this.darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+        }
+
+        if (this.themeMiniToggle) {
+            this.themeMiniToggle.addEventListener('click', () => this.toggleDarkMode());
+        }
+
+        if (this.darkModeBtn) {
+            this.darkModeBtn.addEventListener('click', () => {
+                if (!this.isDarkMode) this.toggleDarkMode();
+            });
+        }
+
+        if (this.offBtn) {
+            this.offBtn.addEventListener('click', () => {
+                if (this.isDarkMode) this.toggleDarkMode();
+            });
+        }
+
+        // Volume sliders
+        if (this.alarmVolumeSlider) {
+            this.alarmVolumeSlider.addEventListener('input', (e) => {
+                this.updateSlider('alarm', e.target.value);
+            });
+        }
+
+        if (this.timerVolumeSlider) {
+            this.timerVolumeSlider.addEventListener('input', (e) => {
+                this.updateSlider('timer', e.target.value);
+            });
+        }
+
+        // Switches
+        if (this.vibrationSwitch) {
+            this.vibrationSwitch.addEventListener('click', () => {
+                this.settings.vibration = !this.settings.vibration;
+                this.vibrationSwitch.classList.toggle('active', this.settings.vibration);
+                this.saveSettings();
+            });
+        }
+
+        if (this.notificationSwitch) {
+            this.notificationSwitch.addEventListener('click', () => {
+                this.settings.notifications = !this.settings.notifications;
+                this.notificationSwitch.classList.toggle('active', this.settings.notifications);
+                this.saveSettings();
+            });
+        }
+
+        // Back button - go to clock tab
+        if (this.backBtn) {
+            this.backBtn.addEventListener('click', () => {
+                if (window.app && window.app.navigation) {
+                    window.app.navigation.switchTab('clock');
+                }
+            });
+        }
+
+        // Gear button - animate
+        if (this.gearBtn) {
+            this.gearBtn.addEventListener('click', () => {
+                this.gearBtn.style.transform = 'rotate(180deg)';
+                setTimeout(() => {
+                    this.gearBtn.style.transform = '';
+                }, 300);
+            });
+        }
+
+        // Nav items
+        this.navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                this.navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Category pills animation
+        document.querySelectorAll('.neu-category-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                pill.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    pill.style.transform = '';
+                }, 150);
+            });
+        });
+    }
+
+    toggleDarkMode() {
+        this.isDarkMode = !this.isDarkMode;
+        StorageManager.save('darkMode', this.isDarkMode);
+        this.applyTheme();
+    }
+
+    applyTheme() {
+        document.body.classList.toggle('light-mode', !this.isDarkMode);
+
+        // Update toggle states
+        if (this.darkModeToggle) {
+            this.darkModeToggle.classList.toggle('active', !this.isDarkMode);
+        }
+
+        if (this.themeMiniToggle) {
+            this.themeMiniToggle.classList.toggle('active', !this.isDarkMode);
+        }
+
+        // Update buttons
+        if (this.darkModeBtn && this.offBtn) {
+            this.darkModeBtn.classList.toggle('active', this.isDarkMode);
+            this.offBtn.classList.toggle('active', !this.isDarkMode);
+        }
+    }
+
+    updateSlider(type, value) {
+        const percent = value + '%';
+
+        if (type === 'alarm') {
+            this.settings.alarmVolume = parseInt(value);
+            if (this.alarmVolumeFill) this.alarmVolumeFill.style.width = percent;
+            if (this.alarmVolumeThumb) this.alarmVolumeThumb.style.left = percent;
+            if (this.alarmVolumeValue) this.alarmVolumeValue.textContent = percent;
+        } else if (type === 'timer') {
+            this.settings.timerVolume = parseInt(value);
+            if (this.timerVolumeFill) this.timerVolumeFill.style.width = percent;
+            if (this.timerVolumeThumb) this.timerVolumeThumb.style.left = percent;
+            if (this.timerVolumeValue) this.timerVolumeValue.textContent = percent;
+        }
+
+        this.saveSettings();
+    }
+
+    updateSliders() {
+        // Initialize slider positions
+        this.updateSlider('alarm', this.settings.alarmVolume);
+        this.updateSlider('timer', this.settings.timerVolume);
+
+        // Set slider values
+        if (this.alarmVolumeSlider) this.alarmVolumeSlider.value = this.settings.alarmVolume;
+        if (this.timerVolumeSlider) this.timerVolumeSlider.value = this.settings.timerVolume;
+
+        // Set switch states
+        if (this.vibrationSwitch) {
+            this.vibrationSwitch.classList.toggle('active', this.settings.vibration);
+        }
+        if (this.notificationSwitch) {
+            this.notificationSwitch.classList.toggle('active', this.settings.notifications);
+        }
+    }
+
+    updateStats() {
+        // Get alarm count
+        const alarms = this.alarmModule?.alarms || [];
+        const activeAlarms = alarms.filter(a => a.enabled).length;
+        const totalAlarms = alarms.length;
+
+        if (this.alarmCountEl) {
+            this.alarmCountEl.textContent = activeAlarms;
+        }
+
+        if (this.alarmProgressEl) {
+            const progress = totalAlarms > 0 ? (activeAlarms / Math.max(totalAlarms, 10)) * 100 : 0;
+            this.alarmProgressEl.style.width = Math.min(progress, 100) + '%';
+        }
+
+        // Get rounds count (mock data for now)
+        const roundsCompleted = StorageManager.load('roundsCompleted', 0);
+        if (this.roundsCountEl) {
+            this.roundsCountEl.textContent = roundsCompleted;
+        }
+
+        if (this.roundsProgressEl) {
+            const progress = Math.min((roundsCompleted / 20) * 100, 100);
+            this.roundsProgressEl.style.width = progress + '%';
+        }
+    }
+
+    saveSettings() {
+        StorageManager.save('appSettings', this.settings);
+    }
+}
+
+// ============================================
 // Main App
 // ============================================
 class App {
@@ -2285,12 +2531,13 @@ class App {
         this.rounds = new RoundsModule(this.audioManager, this.notificationManager);
         this.navigation = new TabNavigation();
         this.voice = new VoiceRecognitionModule(this.alarm);
+        this.settings = new SettingsModule(this.alarm, this.audioManager);
 
         document.addEventListener('click', () => {
             this.notificationManager.requestPermission();
         }, { once: true });
 
-        console.log('Alarm Clock App initialized with all features including voice recognition');
+        console.log('Alarm Clock App initialized with all features including voice recognition and neumorphic settings');
     }
 }
 
